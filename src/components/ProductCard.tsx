@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { motion } from "framer-motion";
 import { Heart, GitCompare, ExternalLink, Star } from "lucide-react";
 import type { Product } from "@/lib/mockData";
 import { SemanticScoreBadge } from "./SemanticScoreBadge";
@@ -11,12 +10,8 @@ export function ProductCard({ product, rank }: { product: Product; rank?: number
   const best = rank === 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay: (rank ?? 0) * 0.04 }}
-      whileHover={{ y: -4 }}
-      className="group relative ai-border-glow rounded-2xl bg-card-gradient border border-border overflow-hidden shadow-card-ai hover:shadow-ai transition-shadow"
+    <div
+      className="group relative ai-border-glow rounded-2xl bg-card-gradient border border-border overflow-hidden shadow-card-ai hover:shadow-ai hover:-translate-y-1 transition-all duration-300"
     >
       {best && (
         <div className="absolute top-3 left-3 z-10 rounded-full bg-ai-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-glow">
@@ -80,6 +75,6 @@ export function ProductCard({ product, rank }: { product: Product; rank?: number
           </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

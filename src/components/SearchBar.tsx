@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Brain, Search, Sparkles, Mic } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -18,9 +17,14 @@ interface Props {
 }
 
 export function SearchBar({ value, onChange, onSubmit, size = "md", loading }: Props) {
+  const [localValue, setLocalValue] = useState(value);
   const [ph, setPh] = useState(0);
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
 
   useEffect(() => {
     const t = setInterval(() => setPh((p) => (p + 1) % placeholders.length), 3500);
@@ -29,11 +33,15 @@ export function SearchBar({ value, onChange, onSubmit, size = "md", loading }: P
 
   const large = size === "lg";
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onChange(localValue);
+    onSubmit?.();
+  };
+
   return (
-    <motion.form
-      onSubmit={(e) => { e.preventDefault(); onSubmit?.(); }}
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
+    <form
+      onSubmit={handleSubmit}
       className={`relative w-full ${large ? "max-w-3xl" : "max-w-2xl"} mx-auto`}
     >
       <div
@@ -47,8 +55,8 @@ export function SearchBar({ value, onChange, onSubmit, size = "md", loading }: P
         </div>
         <input
           ref={inputRef}
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
+          value={localValue}
+          onChange={(e) => setLocalValue(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={placeholders[ph]}
@@ -67,6 +75,6 @@ export function SearchBar({ value, onChange, onSubmit, size = "md", loading }: P
           <Search className="h-4 w-4" /> Search
         </button>
       </div>
-    </motion.form>
+    </form>
   );
 }

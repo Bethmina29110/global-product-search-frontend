@@ -137,9 +137,7 @@ function SearchPage() {
       {/* Main Grid */}
       <div className="mt-8 grid gap-6 lg:grid-cols-[280px_1fr]">
         {showFilters && (
-          <motion.aside
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
+          <aside
             className="space-y-5 rounded-2xl border border-border bg-card-gradient p-5 h-fit lg:sticky lg:top-20 shadow-sm"
           >
             <div className="flex items-center gap-2 text-sm font-semibold">
@@ -174,47 +172,42 @@ function SearchPage() {
             >
               <X className="h-3.5 w-3.5" /> Clear All Filters
             </button>
-          </motion.aside>
+          </aside>
         )}
 
         <div className="space-y-6">
           {/* AI RAG Answer Section */}
-          <AnimatePresence mode="wait">
-            {searchMode === "rag" && ragResult && !loading && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="ai-border-glow rounded-2xl border border-ai-indigo/30 bg-ai-gradient/5 p-5 shadow-card-ai relative overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 p-3 opacity-15">
-                  <Brain className="h-24 w-24 text-ai-purple" />
+          {searchMode === "rag" && ragResult && !loading && (
+            <div
+              className="ai-border-glow rounded-2xl border border-ai-indigo/30 bg-ai-gradient/5 p-5 shadow-card-ai relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 p-3 opacity-15">
+                <Brain className="h-24 w-24 text-ai-purple" />
+              </div>
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-ai-gradient text-white shadow-glow">
+                  <Sparkles className="h-4 w-4" />
                 </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-ai-gradient text-white shadow-glow">
-                    <Sparkles className="h-4 w-4" />
-                  </div>
-                  <span className="font-display font-bold text-sm tracking-wide text-foreground">AI Research Synthesis (RAG)</span>
-                  <span className="rounded-full bg-ai-electric/25 px-2 py-0.5 text-[9px] uppercase tracking-wider text-ai-electric font-semibold">Live Analysis</span>
-                </div>
-                
-                <p className="text-sm leading-relaxed text-foreground/90 font-light max-w-3xl">
-                  {ragResult.answer}
-                </p>
+                <span className="font-display font-bold text-sm tracking-wide text-foreground">AI Research Synthesis (RAG)</span>
+                <span className="rounded-full bg-ai-electric/25 px-2 py-0.5 text-[9px] uppercase tracking-wider text-ai-electric font-semibold">Live Analysis</span>
+              </div>
+              
+              <p className="text-sm leading-relaxed text-foreground/90 font-light max-w-3xl">
+                {ragResult.answer}
+              </p>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
-                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                    <MessageSquareCode className="h-3.5 w-3.5 text-ai-purple" /> Key criteria analyzed:
+              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
+                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <MessageSquareCode className="h-3.5 w-3.5 text-ai-purple" /> Key criteria analyzed:
+                </span>
+                {ragResult.highlights.map(h => (
+                  <span key={h} className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-0.5 text-[11px] text-foreground font-medium border border-border">
+                    <Check className="h-3 w-3 text-ai-electric" /> {h}
                   </span>
-                  {ragResult.highlights.map(h => (
-                    <span key={h} className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-0.5 text-[11px] text-foreground font-medium border border-border">
-                      <Check className="h-3 w-3 text-ai-electric" /> {h}
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Results Summary Bar */}
           <div>
