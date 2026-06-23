@@ -2,7 +2,19 @@ import { Bell, Moon, Sun, Sparkles, User } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 export function TopNav({ title }: { title?: string }) {
-  const { theme, toggleTheme } = useApp();
+  const { theme, toggleTheme, user } = useApp();
+  
+  // Extract initials for the avatar placeholder
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-border bg-background/70 px-4 lg:px-8 backdrop-blur-xl">
       <div className="flex items-center gap-3">
@@ -20,12 +32,12 @@ export function TopNav({ title }: { title?: string }) {
           <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-ai-electric" />
         </button>
         <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-2.5 py-1.5">
-          <div className="grid h-7 w-7 place-items-center rounded-lg bg-ai-gradient text-white">
-            <User className="h-3.5 w-3.5" />
+          <div className="grid h-7 w-7 place-items-center rounded-lg bg-ai-gradient text-white text-xs font-semibold">
+            {user?.fullName ? getInitials(user.fullName) : <User className="h-3.5 w-3.5" />}
           </div>
           <div className="hidden md:block text-xs">
-            <div className="font-semibold leading-none">Alex Chen</div>
-            <div className="text-muted-foreground text-[10px]">Researcher</div>
+            <div className="font-semibold leading-none">{user?.fullName || "Guest User"}</div>
+            <div className="text-muted-foreground text-[10px] mt-0.5">{user?.email || "Not signed in"}</div>
           </div>
         </div>
       </div>

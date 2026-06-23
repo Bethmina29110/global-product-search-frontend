@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard, Search, Heart, Bookmark, BarChart3, Settings, Brain, LogOut } from "lucide-react";
 
-import { authApi } from "@/lib/api/auth";
+import { useApp } from "@/context/AppContext";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -15,14 +15,10 @@ const items = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
+  const { logout } = useApp();
 
   const handleLogout = async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-    }
+    await logout();
     navigate({ to: "/login" });
   };
 

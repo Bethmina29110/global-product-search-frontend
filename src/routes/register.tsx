@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Brain, Mail, Lock, User as UserIcon, Phone, MapPin, ArrowRight } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
@@ -14,7 +14,12 @@ function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,8 +50,8 @@ function RegisterPage() {
         address: address || undefined,
       });
 
-      localStorage.setItem("accessToken", response.accessToken);
-      localStorage.setItem("refreshToken", response.refreshToken);
+      localStorage.setItem("accessToken", response.data.accessToken);
+      localStorage.setItem("refreshToken", response.data.refreshToken);
       toast.success("Account successfully created!");
       navigate({ to: "/dashboard" });
     } catch (err: any) {
@@ -56,6 +61,8 @@ function RegisterPage() {
       setLoading(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">

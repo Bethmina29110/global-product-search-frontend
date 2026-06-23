@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { Toaster } from "sonner";
 
 import appCss from "../styles.css?url";
 import { AppProvider } from "@/context/AppContext";
@@ -22,9 +23,9 @@ function NotFoundComponent() {
         </p>
         <div className="mt-6">
           <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
+              to="/"
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
             Go home
           </Link>
         </div>
@@ -116,6 +117,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AppProvider>
         <Outlet />
+        <Toaster position="top-right" richColors />
       </AppProvider>
     </QueryClientProvider>
   );

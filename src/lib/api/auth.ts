@@ -1,15 +1,17 @@
 import { apiClient } from "./client";
 import { ENDPOINTS } from "./endpoints";
-import { LoginCredentials, RegisterCredentials, AuthResponse, User } from "./types";
+import { LoginCredentials, RegisterCredentials, ApiResponse, AuthData, User } from "./types";
 
 export const authApi = {
-  login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>(ENDPOINTS.AUTH.LOGIN, credentials);
+  login: async (credentials: LoginCredentials): Promise<ApiResponse<AuthData>> => {
+    console.log("authApi.login making API request to:", ENDPOINTS.AUTH.LOGIN, "with payload:", credentials);
+    const response = await apiClient.post<ApiResponse<AuthData>>(ENDPOINTS.AUTH.LOGIN, credentials);
+    console.log("authApi.login raw response object:", response);
     return response.data;
   },
 
-  register: async (credentials: RegisterCredentials): Promise<AuthResponse> => {
-    const response = await apiClient.post<AuthResponse>(ENDPOINTS.AUTH.REGISTER, credentials);
+  register: async (credentials: RegisterCredentials): Promise<ApiResponse<AuthData>> => {
+    const response = await apiClient.post<ApiResponse<AuthData>>(ENDPOINTS.AUTH.REGISTER, credentials);
     return response.data;
   },
 
@@ -22,8 +24,8 @@ export const authApi = {
     }
   },
 
-  getProfile: async (): Promise<User> => {
-    const response = await apiClient.get<User>(ENDPOINTS.AUTH.ME);
+  getProfile: async (): Promise<ApiResponse<User>> => {
+    const response = await apiClient.get<ApiResponse<User>>(ENDPOINTS.AUTH.ME);
     return response.data;
   },
 };

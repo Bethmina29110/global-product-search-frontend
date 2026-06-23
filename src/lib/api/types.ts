@@ -7,10 +7,21 @@ export interface User {
   createdAt: string;
 }
 
-export interface AuthResponse {
+export interface ApiResponse<T> {
+  statusCode: number;
+  success: boolean;
+  message: string;
+  data: T;
+  meta?: {
+    timestamp: string;
+    path: string;
+  };
+}
+
+export interface AuthData {
   accessToken: string;
   refreshToken: string;
-  user: User;
+  user?: User;
 }
 
 export interface LoginCredentials {
@@ -25,29 +36,4 @@ export interface RegisterCredentials {
   confirmPassword?: string;
   address?: string;
   phoneNo?: string;
-}
-
-export interface SearchParams {
-  query: string;
-  limit?: number;
-  useRAG?: boolean;
-}
-
-export interface Product {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  currency: string;
-  url: string;
-  imageUrl?: string;
-  source: string;
-  rating?: number;
-  reviewsCount?: number;
-}
-
-export interface SearchResponse {
-  query: string;
-  results: Product[];
-  answer?: string;
 }

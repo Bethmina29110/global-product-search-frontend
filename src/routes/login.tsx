@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Brain, Mail, Lock, ArrowRight, Github } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
@@ -10,30 +10,56 @@ function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Login form submitted:", { email, passwordLength: password.length });
     if (!email || !password) {
       toast.error("Please fill in all fields.");
       return;
     }
 
-    setLoading(false);
     setLoading(true);
     try {
+      console.log("Calling authApi.login...");
       const response = await authApi.login({ email, password });
-      localStorage.setItem("accessToken", response.accessToken);
-      localStorage.setItem("refreshToken", response.refreshToken);
-      toast.success("Successfully logged in!");
-      navigate({ to: "/dashboard" });
+      console.log("AuthApi.login response received:", response);
+      
+      if (response && response.data) {
+        console.log("Saving tokens to localStorage:", {
+          accessToken: response.data.accessToken ? "found" : "missing",
+          refreshToken: response.data.refreshToken ? "found" : "missing"
+        });
+        localStorage.setItem("accessToken", response.data.accessToken);
+        localStorage.setItem("refreshToken", response.data.refreshToken);
+        toast.success("Successfully logged in!");
+        navigate({ to: "/dashboard" });
+      } else {
+        console.error("AuthApi.login responded but 'data' property was missing:", response);
+        toast.error("Invalid response format from server.");
+      }
     } catch (err: any) {
+      console.error("AuthApi.login failed with error:", err);
+      if (err.response) {
+        console.error("Server response error details:", {
+          status: err.response.status,
+          data: err.response.data
+        });
+      }
       const errorMsg = err.response?.data?.message || "Invalid credentials. Please try again.";
       toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-background">

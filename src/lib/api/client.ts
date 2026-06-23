@@ -1,5 +1,6 @@
 import axios from "axios";
 import { ENDPOINTS } from "./endpoints";
+import { ApiResponse } from "./types";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
@@ -14,10 +15,26 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
+// Helper safe storage accessors for SSR compatibility
+const safeStorage = {
+  getItem: (key: string): string | null => {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(key);
+  },
+  setItem: (key: string, value: string): void => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(key, value);
+  },
+  removeItem: (key: string): void => {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(key);
+  }
+};
+
 // Interceptor to inject access token
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("accessToken");
+    const token = safeStorage.getItem("accessToken");
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -51,8 +68,8 @@ apiClient.interceptors.response.use(
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       if (originalRequest.url === ENDPOINTS.AUTH.REFRESH || originalRequest.url === ENDPOINTS.AUTH.LOGIN) {
         // If login or refresh fails, wipe tokens and fail
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        safeStorage.removeItem("accessToken");
+        safeStorage.removeItem("refreshToken");
         return Promise.reject(error);
       }
 
@@ -72,24 +89,24 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem("refreshToken");
+      const refreshToken = safeStorage.getItem("refreshToken");
       if (!refreshToken) {
         isRefreshing = false;
-        localStorage.removeItem("accessToken");
+        safeStorage.removeItem("accessToken");
         return Promise.reject(error);
       }
 
       try {
-        const response = await axios.post<{ accessToken: string; refreshToken: string }>(
+        const response = await axios.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
           `${API_BASE_URL}${ENDPOINTS.AUTH.REFRESH}`,
           { refreshToken }
         );
 
-        const newAccessToken = response.data.accessToken;
-        const newRefreshToken = response.data.refreshToken;
+        const newAccessToken = response.data.data.accessToken;
+        const newRefreshToken = response.data.data.refreshToken;
 
-        localStorage.setItem("accessToken", newAccessToken);
-        localStorage.setItem("refreshToken", newRefreshToken);
+        safeStorage.setItem("accessToken", newAccessToken);
+        safeStorage.setItem("refreshToken", newRefreshToken);
 
         apiClient.defaults.headers.common["Authorization"] = `Bearer ${newAccessToken}`;
         originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
@@ -101,9 +118,11 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         isRefreshing = false;
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
-        window.location.href = "/login";
+        safeStorage.removeItem("accessToken");
+        safeStorage.removeItem("refreshToken");
+        if (typeof window !== "undefined") {
+          window.location.href = "/login";
+        }
         return Promise.reject(refreshError);
       }
     }
