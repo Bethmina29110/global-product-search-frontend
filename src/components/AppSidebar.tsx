@@ -3,7 +3,7 @@ import { LayoutDashboard, Search, Heart, Bookmark, BarChart3, Settings, Brain } 
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/dashboard", label: "Search", icon: Search, exact: false, hash: "search" },
+  { to: "/search", label: "Search", icon: Search },
   { to: "/favorites", label: "Favorites", icon: Heart },
   { to: "/saved-searches", label: "Saved Searches", icon: Bookmark },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
