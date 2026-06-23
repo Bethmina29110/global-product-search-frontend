@@ -2,23 +2,29 @@ export interface User {
   id: string;
   email: string;
   fullName: string;
+  address?: string;
+  phoneNo?: string;
   createdAt: string;
 }
 
 export interface AuthResponse {
   accessToken: string;
+  refreshToken: string;
   user: User;
 }
 
 export interface LoginCredentials {
   email: string;
-  password?: string; // Optional if implementing other auth types
+  password?: string;
 }
 
 export interface RegisterCredentials {
   email: string;
   fullName: string;
   password?: string;
+  confirmPassword?: string;
+  address?: string;
+  phoneNo?: string;
 }
 
 export interface SearchParams {
@@ -43,5 +49,5 @@ export interface Product {
 export interface SearchResponse {
   query: string;
   results: Product[];
-  answer?: string; // Optional RAG generated summary/answer
+  answer?: string;
 }
