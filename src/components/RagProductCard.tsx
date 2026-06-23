@@ -1,15 +1,33 @@
-import { Heart, ExternalLink, Star, Sparkles } from "lucide-react";
+import { Heart, ExternalLink, Star, Sparkles, Layers } from "lucide-react";
 import type { RagProduct } from "@/lib/api/types";
 import { useApp } from "@/context/AppContext";
 
-export function RagProductCard({ product, rank }: { product: RagProduct; rank?: number }) {
+interface RagProductCardProps {
+  product: RagProduct;
+  rank?: number;
+  onClick?: () => void;
+}
+
+export function RagProductCard({ product, rank, onClick }: RagProductCardProps) {
   const { favorites, toggleFavorite } = useApp();
   const isFavorite = favorites.includes(product.title);
   const bestMatch = rank === 0;
 
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Avoid triggering card details modal onClick
+    toggleFavorite(product.title);
+  };
+
+  const handleLinkClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Avoid triggering card details modal onClick
+  };
+
+  const hasSpecs = product.specs && Object.keys(product.specs).length > 0;
+
   return (
     <div
-      className="group relative ai-border-glow rounded-2xl bg-card-gradient border border-border overflow-hidden shadow-card-ai hover:shadow-ai hover:-translate-y-1 transition-all duration-300 flex flex-col h-full"
+      onClick={onClick}
+      className="group relative ai-border-glow rounded-2xl bg-card-gradient border border-border overflow-hidden shadow-card-ai hover:shadow-ai hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer hover:border-ai-electric/50"
     >
       {bestMatch && (
         <div className="absolute top-3 left-3 z-10 rounded-full bg-ai-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white shadow-glow flex items-center gap-1">
@@ -18,9 +36,9 @@ export function RagProductCard({ product, rank }: { product: RagProduct; rank?: 
       )}
       
       <button
-        onClick={() => toggleFavorite(product.title)}
+        onClick={handleFavoriteClick}
         aria-label="favorite"
-        className="absolute top-3 right-3 z-10 grid h-9 w-9 place-items-center rounded-full glass hover:bg-white/10 transition"
+        className="absolute top-3 right-3 z-10 grid h-9 w-9 place-items-center rounded-full glass hover:bg-white/10 transition cursor-pointer"
       >
         <Heart className={`h-4 w-4 ${isFavorite ? "fill-ai-purple text-ai-purple" : "text-foreground"}`} />
       </button>
@@ -33,7 +51,6 @@ export function RagProductCard({ product, rank }: { product: RagProduct; rank?: 
           loading="lazy"
           className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {
-            // Fallback image if hotlinking fails
             e.currentTarget.src = "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&q=80&w=400";
           }}
         />
@@ -66,7 +83,7 @@ export function RagProductCard({ product, rank }: { product: RagProduct; rank?: 
             </div>
           </div>
 
-          {/* AI Confidence / Match Score Badge */}
+          {/* Match Score Badge */}
           <div className="flex items-center gap-2">
             <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
               <div
@@ -83,6 +100,20 @@ export function RagProductCard({ product, rank }: { product: RagProduct; rank?: 
           <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 bg-surface/40 p-2.5 rounded-xl border border-border/40 mt-2 font-light">
             {product.summary}
           </p>
+
+          {/* Specifications Badge list */}
+          {hasSpecs && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              <span className="inline-flex items-center gap-1 rounded bg-ai-purple/10 px-1.5 py-0.5 text-[9px] text-ai-purple font-medium border border-ai-purple/20">
+                <Layers className="h-2.5 w-2.5" /> Specs Available
+              </span>
+              {Object.entries(product.specs).slice(0, 2).map(([key, val]) => (
+                <span key={key} className="rounded bg-white/5 border border-border px-1.5 py-0.5 text-[9px] text-muted-foreground max-w-[120px] truncate">
+                  {key}: {String(val)}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Action Button */}
@@ -90,7 +121,8 @@ export function RagProductCard({ product, rank }: { product: RagProduct; rank?: 
           href={product.productUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2.5 text-xs font-semibold text-white shadow-ai hover:opacity-95 transition"
+          onClick={handleLinkClick}
+          className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2.5 text-xs font-semibold text-white shadow-ai hover:opacity-95 transition cursor-pointer"
         >
           View at {product.store} <ExternalLink className="h-3.5 w-3.5" />
         </a>

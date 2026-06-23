@@ -1,4 +1,4 @@
-import { Brain, Search, Sparkles, Mic } from "lucide-react";
+import { Brain, Search, Sparkles, Mic, Loader2, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const placeholders = [
@@ -11,12 +11,13 @@ const placeholders = [
 interface Props {
   value: string;
   onChange: (v: string) => void;
-  onSubmit?: () => void;
+  onSubmit?: (query: string) => void;
+  onCancel?: () => void;
   size?: "lg" | "md";
   loading?: boolean;
 }
 
-export function SearchBar({ value, onChange, onSubmit, size = "md", loading }: Props) {
+export function SearchBar({ value, onChange, onSubmit, onCancel, size = "md", loading }: Props) {
   const [localValue, setLocalValue] = useState(value);
   const [ph, setPh] = useState(0);
   const [focused, setFocused] = useState(false);
@@ -35,9 +36,15 @@ export function SearchBar({ value, onChange, onSubmit, size = "md", loading }: P
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onChange(localValue);
-    onSubmit?.();
+    if (loading) {
+      onCancel?.();
+    } else {
+      onChange(localValue);
+      onSubmit?.(localValue);
+    }
   };
+
+  const isButtonDisabled = !localValue.trim() && !loading;
 
   return (
     <form
@@ -60,20 +67,37 @@ export function SearchBar({ value, onChange, onSubmit, size = "md", loading }: P
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           placeholder={placeholders[ph]}
-          className={`flex-1 bg-transparent outline-none placeholder:text-muted-foreground/70 ${large ? "text-lg py-2" : "text-base"}`}
+          disabled={loading}
+          className={`flex-1 bg-transparent outline-none placeholder:text-muted-foreground/70 ${large ? "text-lg py-2" : "text-base"} disabled:opacity-75`}
         />
         <div className="hidden md:flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-[10px] font-medium text-muted-foreground">
           <Sparkles className="h-3 w-3 text-ai-purple" /> Semantic AI
         </div>
-        <button type="button" aria-label="voice search" className="grid h-9 w-9 place-items-center rounded-xl hover:bg-white/5 transition">
+        <button
+          type="button"
+          aria-label="voice search"
+          disabled={loading}
+          className="grid h-9 w-9 place-items-center rounded-xl hover:bg-white/5 transition cursor-pointer hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
           <Mic className="h-4 w-4 text-muted-foreground" />
         </button>
-        <button
-          type="submit"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2 text-sm font-semibold text-white shadow-ai hover:opacity-95 transition"
-        >
-          <Search className="h-4 w-4" /> Search
-        </button>
+        {loading ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-white shadow-ai hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
+          >
+            <Loader2 className="h-4 w-4 animate-spin" /> Stop
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={isButtonDisabled}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2 text-sm font-semibold text-white shadow-ai hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-40 disabled:scale-100 disabled:active:scale-100 disabled:cursor-not-allowed"
+          >
+            <Search className="h-4 w-4" /> Search
+          </button>
+        )}
       </div>
     </form>
   );
