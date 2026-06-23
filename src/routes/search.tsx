@@ -30,6 +30,32 @@ function SearchPage() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Visible items count state for Load More
+  const [visibleCount, setVisibleCount] = useState(20);
+
+  // Exit warning tracking references
+  const loadingRef = useRef(loading);
+  const hasDataRef = useRef(false);
+
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+
+  useEffect(() => {
+    hasDataRef.current = !!(ragData || normalResults.length > 0);
+  }, [ragData, normalResults]);
+
+  // Warning when leaving the page
+  useEffect(() => {
+    return () => {
+      if (loadingRef.current) {
+        toast.warning("Search request cancelled because you left the page.");
+      } else if (hasDataRef.current) {
+        toast.info("Your search results were cleared.");
+      }
+    };
+  }, []);
+
   const handleCancelSearch = () => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -37,6 +63,25 @@ function SearchPage() {
       setLoading(false);
       toast.info("Search request stopped.");
     }
+  };
+
+  const handleClearResults = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setQ("");
+    setRagData(null);
+    setNormalResults([]);
+    setError(null);
+    setLoading(false);
+    setVisibleCount(20);
+    toast.success("Search results cleared.");
+  };
+
+  const handleLoadMore = () => {
+    setVisibleCount((prev) => prev + 20);
+    toast.success("Loaded more results!");
   };
 
   const onSubmit = async (queryText?: string) => {
@@ -56,6 +101,7 @@ function SearchPage() {
     
     setLoading(true);
     setError(null);
+    setVisibleCount(20);
     
     if (searchMode === "rag") {
       try {
@@ -235,8 +281,8 @@ function SearchPage() {
 
           {/* Results Summary Bar */}
           <div>
-            <div className="mb-4 flex items-center justify-between text-sm">
-              <div className="text-muted-foreground">
+            <div className="mb-4 flex items-center justify-between gap-4 text-sm">
+              <div className="text-muted-foreground flex items-center gap-3">
                 {searchMode === "rag" && ragData ? (
                   <>
                     <span className="font-semibold text-foreground">
@@ -258,6 +304,15 @@ function SearchPage() {
                     No search results loaded.
                   </>
                 )}
+
+                {(ragData || normalResults.length > 0) && (
+                  <button
+                    onClick={handleClearResults}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-2.5 py-1 text-[11px] hover:bg-surface-elevated transition cursor-pointer hover:scale-105 active:scale-95 text-muted-foreground hover:text-foreground font-semibold"
+                  >
+                    <X className="h-3.5 w-3.5" /> Clear Results
+                  </button>
+                )}
               </div>
               <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="h-1.5 w-1.5 rounded-full bg-ai-electric animate-pulse" /> Live Repository Search
@@ -272,19 +327,43 @@ function SearchPage() {
               ) : (
                 <div className="space-y-8">
                   <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                    {ragData.products.map((p, i) => (
+                    {ragData.products.slice(0, visibleCount).map((p, i) => (
                       <RagProductCard key={i} product={p} rank={i} onClick={() => setSelectedProduct(p)} />
                     ))}
                   </div>
+
+                  {ragData.products.length > visibleCount && (
+                    <div className="flex items-center justify-center pt-2">
+                      <button
+                        onClick={handleLoadMore}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-6 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                      >
+                        Load More (+20)
+                      </button>
+                    </div>
+                  )}
                 </div>
               )
             ) : normalResults.length === 0 ? (
               <EmptyState onSelectSuggestion={(s) => { setQ(s); onSubmit(s); }} />
             ) : (
-              <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {normalResults.map((p, i) => (
-                  <NormalProductCard key={i} product={p} onClick={() => setSelectedProduct(p)} />
-                ))}
+              <div className="space-y-8">
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {normalResults.slice(0, visibleCount).map((p, i) => (
+                    <NormalProductCard key={i} product={p} onClick={() => setSelectedProduct(p)} />
+                  ))}
+                </div>
+
+                {normalResults.length > visibleCount && (
+                  <div className="flex items-center justify-center pt-2">
+                    <button
+                      onClick={handleLoadMore}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-6 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                    >
+                      Load More (+20)
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
