@@ -33,10 +33,10 @@ export function TopNav({ title }: { title?: string }) {
         </button>
         <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-2.5 py-1.5">
           <div className="grid h-7 w-7 place-items-center rounded-lg bg-ai-gradient text-white text-xs font-semibold">
-            {user?.fullName ? getInitials(user.fullName) : <User className="h-3.5 w-3.5" />}
+            {user ? getInitials(user.name || user.fullName || "") : <User className="h-3.5 w-3.5" />}
           </div>
           <div className="hidden md:block text-xs">
-            <div className="font-semibold leading-none">{user?.fullName || "Guest User"}</div>
+            <div className="font-semibold leading-none">{user?.name || user?.fullName || "Guest User"}</div>
             <div className="text-muted-foreground text-[10px] mt-0.5">{user?.email || "Not signed in"}</div>
           </div>
         </div>

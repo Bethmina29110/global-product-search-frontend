@@ -6,7 +6,7 @@ import { useApp } from "@/context/AppContext";
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
 
 function SettingsPage() {
-  const { theme, toggleTheme } = useApp();
+  const { theme, toggleTheme, user } = useApp();
   return (
     <DashboardLayout title="Settings">
       <div className="mb-6">
@@ -15,9 +15,9 @@ function SettingsPage() {
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
         <Card icon={User} title="Profile">
-          <Row label="Full name"><Input defaultValue="Alex Chen" /></Row>
-          <Row label="Email"><Input defaultValue="alex@university.edu" /></Row>
-          <Row label="Role"><Input defaultValue="Researcher" /></Row>
+          <Row label="Full name"><Input key={user?.name || user?.fullName} defaultValue={user?.name || user?.fullName || "Guest User"} /></Row>
+          <Row label="Email"><Input key={user?.email} defaultValue={user?.email || "Not signed in"} /></Row>
+          <Row label="Joined"><Input key={user?.createdAt} defaultValue={user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : ""} disabled /></Row>
         </Card>
 
         <Card icon={Palette} title="Appearance">

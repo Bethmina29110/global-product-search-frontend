@@ -4,6 +4,6 @@ export const ENDPOINTS = {
     REGISTER: "/auth/register",
     REFRESH: "/auth/refresh",
     LOGOUT: "/auth/logout",
-    ME: "/auth/me",
+    ME: "/users/me",
   },
 };

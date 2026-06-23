@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Brain, Mail, Lock, ArrowRight, Github } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
+import { useApp } from "@/context/AppContext";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
@@ -12,6 +13,7 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
+  const { fetchUser } = useApp();
 
   useEffect(() => {
     setMounted(true);
@@ -38,6 +40,7 @@ function LoginPage() {
         });
         localStorage.setItem("accessToken", response.data.accessToken);
         localStorage.setItem("refreshToken", response.data.refreshToken);
+        await fetchUser();
         toast.success("Successfully logged in!");
         navigate({ to: "/dashboard" });
       } else {
