@@ -6,4 +6,7 @@ export const ENDPOINTS = {
     LOGOUT: "/auth/logout",
     ME: "/users/me",
   },
+  RAG: {
+    SEARCH: "/rag/search",
+  },
 };

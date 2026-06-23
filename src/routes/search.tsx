@@ -1,31 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Filter, SlidersHorizontal, Sparkles, X, Brain, Check, MessageSquareCode } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { Filter, SlidersHorizontal, Sparkles, X, Brain, Check, MessageSquareCode, Award, ArrowUpRight } from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { SearchBar } from "@/components/SearchBar";
 import { ProductCard } from "@/components/ProductCard";
+import { RagProductCard } from "@/components/RagProductCard";
 import { LoadingAnimation } from "@/components/LoadingAnimation";
 import { products, categories, brands, sources } from "@/lib/mockData";
+import { ragApi } from "@/lib/api/rag";
+import { RagSearchData } from "@/lib/api/types";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/search")({ component: SearchPage });
 
-const MOCK_RAG_ANSWERS: Record<string, { answer: string; highlights: string[] }> = {
-  "ergonomic chair for long coding sessions": {
-    answer: "Based on our indexed catalog and semantic search matching, the **Ergohuman Gen 2** is the premier choice for developers sitting 8+ hours. Its auto-tuning lumbar system dynamically responds to back movement, which helps prevent posture fatigue. Alternatively, the **Steelcase Gesture** features extremely adjustable 360-degree armrests, perfect for code-writing angles. For hot environments, the mesh on the **Herman Miller Aeron** remains unmatched.",
-    highlights: ["Lumbar Support", "360 Armrests", "Mesh Material"]
-  },
-  "minimalist desk under $600": {
-    answer: "For a budget of $600, the **Fully Jarvis Bamboo Standing Desk** is highly rated for its quiet dual-motor system and sustainable wood finish. If you prioritize easy assembly and built-in cable management channels, the **Branch Standing Desk** is a strong runner-up, keeping wires completely hidden to preserve a clean minimalist aesthetic.",
-    highlights: ["Quiet Motors", "Cable Management", "Sustainable Finish"]
-  }
-};
-
 function SearchPage() {
-  const [q, setQ] = useState("ergonomic chair for long coding sessions");
+  const [q, setQ] = useState("");
   const [searchMode, setSearchMode] = useState<"semantic" | "rag">("rag");
   const [loading, setLoading] = useState(false);
-  const [ragResult, setRagResult] = useState<{ answer: string; highlights: string[] } | null>(MOCK_RAG_ANSWERS["ergonomic chair for long coding sessions"]);
+  const [ragData, setRagData] = useState<RagSearchData | null>(null);
+  const [error, setError] = useState<string | null>(null);
   
   const [cat, setCat] = useState("All");
   const [price, setPrice] = useState(2000);
@@ -34,28 +27,50 @@ function SearchPage() {
   const [selSources, setSelSources] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(true);
 
-  const onSubmit = () => {
-    setLoading(true);
-    setRagResult(null);
+  // Trigger search on initial load only if query exists
+  useEffect(() => {
+    if (q) {
+      onSubmit();
+    }
+  }, []);
+
+  const onSubmit = async () => {
+    if (!q.trim()) {
+      toast.error("Please enter a search query.");
+      return;
+    }
     
-    setTimeout(() => {
-      setLoading(false);
-      if (searchMode === "rag") {
-        const queryLower = q.toLowerCase();
-        let matchedKey = Object.keys(MOCK_RAG_ANSWERS).find(key => queryLower.includes(key) || key.includes(queryLower));
-        if (matchedKey) {
-          setRagResult(MOCK_RAG_ANSWERS[matchedKey]);
+    setLoading(true);
+    setError(null);
+    
+    if (searchMode === "rag") {
+      try {
+        const response = await ragApi.search(q, 1);
+        if (response && response.success) {
+          setRagData(response.data);
+          toast.success("AI search complete!");
         } else {
-          setRagResult({
-            answer: `Here is an AI synthesis of products matching your query **"${q}"**. We found top matches from **${selSources.length ? selSources.join(', ') : 'all sources'}**. Most products feature premium quality and fit your specification. Look at the filtered list below for pricing and rating comparisons.`,
-            highlights: ["General Recommendation", "Matching Specs"]
-          });
+          setError("Failed to fetch search results from server.");
+          toast.error("Failed to load search results.");
         }
+      } catch (err: any) {
+        console.error("RAG search failed:", err);
+        const errMsg = err.response?.data?.message || "Something went wrong. Please make sure the backend server is running.";
+        setError(errMsg);
+        toast.error(errMsg);
+      } finally {
+        setLoading(false);
       }
-    }, 1200);
+    } else {
+      // Local semantic mock search
+      setTimeout(() => {
+        setLoading(false);
+        toast.success("Vector matching complete!");
+      }, 600);
+    }
   };
 
-  const filtered = useMemo(() => {
+  const filteredLocalProducts = useMemo(() => {
     return products
       .filter((p) => {
         if (!q) return true;
@@ -82,13 +97,16 @@ function SearchPage() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-ai-purple animate-pulse" />
-            Express intent in natural language — the system embeds and ranks across {products.length * 84} products.
+            Express intent in natural language — RAG retrieves and synthesizes choices in real-time.
           </div>
           
           {/* Search Mode Toggles */}
           <div className="flex items-center rounded-xl bg-surface p-1 border border-border">
             <button
-              onClick={() => setSearchMode("semantic")}
+              onClick={() => {
+                setSearchMode("semantic");
+                setRagData(null);
+              }}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-medium transition ${
                 searchMode === "semantic"
                   ? "bg-surface-elevated text-foreground shadow-sm"
@@ -99,7 +117,9 @@ function SearchPage() {
               Vector Match
             </button>
             <button
-              onClick={() => setSearchMode("rag")}
+              onClick={() => {
+                setSearchMode("rag");
+              }}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-medium transition ${
                 searchMode === "rag"
                   ? "bg-ai-gradient text-white shadow-ai"
@@ -176,36 +196,47 @@ function SearchPage() {
         )}
 
         <div className="space-y-6">
-          {/* AI RAG Answer Section */}
-          {searchMode === "rag" && ragResult && !loading && (
-            <div
-              className="ai-border-glow rounded-2xl border border-ai-indigo/30 bg-ai-gradient/5 p-5 shadow-card-ai relative overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 p-3 opacity-15">
-                <Brain className="h-24 w-24 text-ai-purple" />
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-ai-gradient text-white shadow-glow">
-                  <Sparkles className="h-4 w-4" />
-                </div>
-                <span className="font-display font-bold text-sm tracking-wide text-foreground">AI Research Synthesis (RAG)</span>
-                <span className="rounded-full bg-ai-electric/25 px-2 py-0.5 text-[9px] uppercase tracking-wider text-ai-electric font-semibold">Live Analysis</span>
-              </div>
-              
-              <p className="text-sm leading-relaxed text-foreground/90 font-light max-w-3xl">
-                {ragResult.answer}
-              </p>
+          {error && (
+            <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
+              {error}
+            </div>
+          )}
 
-              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3">
-                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-                  <MessageSquareCode className="h-3.5 w-3.5 text-ai-purple" /> Key criteria analyzed:
-                </span>
-                {ragResult.highlights.map(h => (
-                  <span key={h} className="inline-flex items-center gap-1 rounded-full bg-surface px-2.5 py-0.5 text-[11px] text-foreground font-medium border border-border">
-                    <Check className="h-3 w-3 text-ai-electric" /> {h}
-                  </span>
-                ))}
-              </div>
+          {/* AI RAG Synthesis Highlights */}
+          {searchMode === "rag" && ragData && !loading && (
+            <div className="space-y-6">
+              {/* Premium Top Recommendation Banner */}
+              {ragData.topRecommendation && (
+                <div className="relative overflow-hidden rounded-3xl border border-ai-electric/30 bg-surface/20 p-6 shadow-glow backdrop-blur-md">
+                  {/* Decorative background gradients */}
+                  <div className="absolute -right-20 -top-20 h-40 w-40 rounded-full bg-ai-electric/25 blur-3xl" />
+                  <div className="absolute -left-20 -bottom-20 h-40 w-40 rounded-full bg-ai-purple/20 blur-3xl" />
+                  
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="space-y-3">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-ai-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                        <Award className="h-3.5 w-3.5" /> Top Organic Choice
+                      </div>
+                      <h3 className="font-display text-xl lg:text-2xl font-black text-foreground">
+                        {ragData.topRecommendation.title}
+                      </h3>
+                      <p className="text-sm text-muted-foreground max-w-xl font-light">
+                        {ragData.topRecommendation.reason}
+                      </p>
+                    </div>
+                    
+                    {/* Score display badge */}
+                    <div className="flex items-center gap-3 shrink-0 rounded-2xl bg-surface border border-border p-4">
+                      <div className="text-center">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">AI Match Score</div>
+                        <div className="text-2xl font-extrabold text-ai-gradient mt-0.5">
+                          {ragData.topRecommendation.score}/10
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -213,8 +244,23 @@ function SearchPage() {
           <div>
             <div className="mb-4 flex items-center justify-between text-sm">
               <div className="text-muted-foreground">
-                <span className="font-semibold text-foreground">{filtered.length}</span> matches found for{" "}
-                <span className="text-ai-gradient font-medium">"{q}"</span>
+                {searchMode === "rag" && ragData ? (
+                  <>
+                    <span className="font-semibold text-foreground">
+                      {ragData.products.length}
+                    </span>{" "}
+                    AI-synthesized matches for{" "}
+                    <span className="text-ai-gradient font-medium">"{ragData.query}"</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-semibold text-foreground">
+                      {filteredLocalProducts.length}
+                    </span>{" "}
+                    local matches for{" "}
+                    <span className="text-ai-gradient font-medium">"{q}"</span>
+                  </>
+                )}
               </div>
               <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
                 <span className="h-1.5 w-1.5 rounded-full bg-ai-electric animate-pulse" /> Vectorized & Ranked
@@ -223,11 +269,23 @@ function SearchPage() {
 
             {loading ? (
               <LoadingAnimation />
-            ) : filtered.length === 0 ? (
+            ) : searchMode === "rag" ? (
+              !ragData || ragData.products.length === 0 ? (
+                <EmptyState onSelectSuggestion={(s) => { setQ(s); onSubmit(); }} />
+              ) : (
+                <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {ragData.products.map((p, i) => (
+                    <RagProductCard key={i} product={p} rank={i} />
+                  ))}
+                </div>
+              )
+            ) : filteredLocalProducts.length === 0 ? (
               <EmptyState onSelectSuggestion={(s) => { setQ(s); onSubmit(); }} />
             ) : (
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {filtered.map((p, i) => <ProductCard key={p.id} product={p} rank={i} />)}
+                {filteredLocalProducts.map((p, i) => (
+                  <ProductCard key={p.id} product={p} rank={i} />
+                ))}
               </div>
             )}
           </div>
@@ -274,7 +332,7 @@ function EmptyState({ onSelectSuggestion }: { onSelectSuggestion: (s: string) =>
       <h3 className="mt-5 font-display text-xl font-semibold">No semantic matches</h3>
       <p className="mt-2 text-sm text-muted-foreground">Try relaxing your filters or rephrasing the query with more contextual intent.</p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">
-        {["minimalist desk under $600","wireless mechanical keyboard","ergonomic chair with lumbar support"].map((s) => (
+        {["black t shirts","wireless mechanical keyboard","ergonomic chair with lumbar support"].map((s) => (
           <button
             key={s}
             onClick={() => onSelectSuggestion(s)}

@@ -38,3 +38,31 @@ export interface RegisterCredentials {
   address?: string;
   phoneNo?: string;
 }
+
+export interface RagProduct {
+  title: string;
+  category: string;
+  specs: Record<string, any>;
+  confidence: number;
+  summary: string;
+  score: number;
+  productUrl: string;
+  imageUrl: string;
+  price: string;
+  rating: number | null;
+  store: string;
+}
+
+export interface RagSearchData {
+  query: string;
+  meta: {
+    page: number;
+    limit: number;
+  };
+  topRecommendation?: {
+    title: string;
+    reason: string;
+    score: number;
+  };
+  products: RagProduct[];
+}
