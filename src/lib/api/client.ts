@@ -12,7 +12,7 @@ export const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 30000,
+  timeout: 120000, // 120 seconds (increased for AI operations)
 });
 
 // Helper safe storage accessors for SSR compatibility
