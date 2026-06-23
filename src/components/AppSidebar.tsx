@@ -1,5 +1,5 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Search, Heart, Bookmark, BarChart3, Settings, Brain } from "lucide-react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard, Search, Heart, Bookmark, BarChart3, Settings, Brain, LogOut } from "lucide-react";
 
 const items = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -12,6 +12,12 @@ const items = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate({ to: "/login" });
+  };
 
   return (
     <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-sidebar/60 backdrop-blur-xl">
@@ -47,6 +53,14 @@ export function AppSidebar() {
             </Link>
           );
         })}
+
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
       </nav>
 
       <div className="m-3 rounded-2xl border border-border bg-card-gradient p-4">
