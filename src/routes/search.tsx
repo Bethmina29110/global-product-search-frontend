@@ -1,14 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState, useEffect, useRef } from "react";
-import { Filter, SlidersHorizontal, Sparkles, X, Brain, Check, MessageSquareCode, Award, ArrowUpRight, ChevronLeft, ChevronRight, Star, Layers, ShoppingBag } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Filter, SlidersHorizontal, Sparkles, X, Brain, Check, MessageSquareCode, Award, ChevronLeft, ChevronRight, Star, Layers, ShoppingBag, Search } from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { SearchBar } from "@/components/SearchBar";
-import { ProductCard } from "@/components/ProductCard";
+import { NormalProductCard } from "@/components/NormalProductCard";
 import { RagProductCard } from "@/components/RagProductCard";
 import { LoadingAnimation } from "@/components/LoadingAnimation";
-import { products, categories, brands, sources } from "@/lib/mockData";
+import { NormalLoadingAnimation } from "@/components/NormalLoadingAnimation";
+import { searchApi } from "@/lib/api/search";
 import { ragApi } from "@/lib/api/rag";
-import { RagSearchData, RagProduct } from "@/lib/api/types";
+import { RagSearchData, RagProduct, SearchProduct } from "@/lib/api/types";
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -16,33 +17,18 @@ export const Route = createFileRoute("/search")({ component: SearchPage });
 
 function SearchPage() {
   const [q, setQ] = useState("");
-  const [searchMode, setSearchMode] = useState<"semantic" | "rag">("rag");
+  const [searchMode, setSearchMode] = useState<"normal" | "rag">("rag");
   const [loading, setLoading] = useState(false);
   const [ragData, setRagData] = useState<RagSearchData | null>(null);
+  const [normalResults, setNormalResults] = useState<SearchProduct[]>([]);
   const [error, setError] = useState<string | null>(null);
   
-  // Pagination State
-  const [page, setPage] = useState(1);
-
   // Modal State
-  const [selectedProduct, setSelectedProduct] = useState<RagProduct | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<RagProduct | SearchProduct | null>(null);
   
   // Abort Controller State
   const abortControllerRef = useRef<AbortController | null>(null);
-  
-  const [cat, setCat] = useState("All");
-  const [price, setPrice] = useState(2000);
-  const [minScore, setMinScore] = useState(0.7);
-  const [selBrands, setSelBrands] = useState<string[]>([]);
-  const [selSources, setSelSources] = useState<string[]>([]);
-  const [showFilters, setShowFilters] = useState(true);
-
-  // Trigger initial empty load check
-  useEffect(() => {
-    if (q) {
-      onSubmit(q, 1);
-    }
-  }, []);
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleCancelSearch = () => {
     if (abortControllerRef.current) {
@@ -53,7 +39,7 @@ function SearchPage() {
     }
   };
 
-  const onSubmit = async (queryText?: string, targetPage = 1) => {
+  const onSubmit = async (queryText?: string) => {
     const searchQuery = queryText !== undefined ? queryText : q;
     if (!searchQuery.trim()) {
       toast.error("Please enter a search query.");
@@ -70,14 +56,14 @@ function SearchPage() {
     
     setLoading(true);
     setError(null);
-    setPage(targetPage);
     
     if (searchMode === "rag") {
       try {
-        const response = await ragApi.search(searchQuery, targetPage, controller.signal);
+        const response = await ragApi.search(searchQuery, controller.signal);
         if (response && response.success) {
           setRagData(response.data);
-          toast.success(`Loaded page ${targetPage} results!`);
+          setNormalResults([]);
+          toast.success(`Loaded RAG results!`);
         } else {
           setError("Failed to fetch search results from server.");
           toast.error("Failed to load search results.");
@@ -98,69 +84,72 @@ function SearchPage() {
         }
       }
     } else {
-      // Local semantic mock search
-      setTimeout(() => {
-        setLoading(false);
-        abortControllerRef.current = null;
-        toast.success("Vector matching complete!");
-      }, 600);
+      // Normal search
+      try {
+        const response = await searchApi.search(searchQuery, controller.signal);
+        if (response && response.success) {
+          setNormalResults(response.data.results);
+          setRagData(null);
+          toast.success("Normal search complete!");
+        } else {
+          setError("Failed to fetch search results from server.");
+          toast.error("Failed to load search results.");
+        }
+      } catch (err: any) {
+        if (axios.isCancel(err) || err.name === "CanceledError" || err.code === "ERR_CANCELED") {
+          console.log("Normal search query aborted by user.");
+          return;
+        }
+        console.error("Normal search failed:", err);
+        const errMsg = err.response?.data?.message || "Something went wrong. Please check your backend connection.";
+        setError(errMsg);
+        toast.error(errMsg);
+      } finally {
+        if (abortControllerRef.current === controller) {
+          setLoading(false);
+          abortControllerRef.current = null;
+        }
+      }
     }
   };
 
-  const handlePageChange = (newPage: number) => {
-    if (newPage < 1) return;
-    onSubmit(q, newPage);
+  // Type guard to distinguish RAG product from normal search product
+  const isRagProduct = (p: RagProduct | SearchProduct): p is RagProduct => {
+    return (p as RagProduct).confidence !== undefined;
   };
 
-  const filteredLocalProducts = useMemo(() => {
-    return products
-      .filter((p) => {
-        if (!q) return true;
-        const queryLower = q.toLowerCase();
-        return (
-          p.name.toLowerCase().includes(queryLower) ||
-          p.description.toLowerCase().includes(queryLower) ||
-          p.brand.toLowerCase().includes(queryLower) ||
-          p.category.toLowerCase().includes(queryLower)
-        );
-      })
-      .filter((p) => (cat === "All" ? true : p.category === cat))
-      .filter((p) => p.price <= price)
-      .filter((p) => p.similarity_score >= minScore)
-      .filter((p) => (selBrands.length ? selBrands.includes(p.brand) : true))
-      .filter((p) => (selSources.length ? selSources.includes(p.source) : true))
-      .sort((a, b) => b.similarity_score - a.similarity_score);
-  }, [q, cat, price, minScore, selBrands, selSources]);
-
   return (
-    <DashboardLayout title="Semantic Search Portal">
+    <DashboardLayout title="Product Search Portal">
       {/* Search Header */}
       <section className="rounded-3xl border border-border bg-card-gradient p-6 lg:p-8 shadow-card-ai transition-all duration-300">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Sparkles className="h-3.5 w-3.5 text-ai-purple animate-pulse" />
-            Express intent in natural language — RAG retrieves and synthesizes choices in real-time.
+            Search products instantly using normal queries or RAG-based AI synthesis.
           </div>
           
           {/* Search Mode Toggles */}
           <div className="flex items-center rounded-xl bg-surface p-1 border border-border">
             <button
               onClick={() => {
-                setSearchMode("semantic");
+                setSearchMode("normal");
                 setRagData(null);
+                setNormalResults([]);
               }}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-medium transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                searchMode === "semantic"
+                searchMode === "normal"
                   ? "bg-surface-elevated text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Brain className="h-3.5 w-3.5" />
-              Vector Match
+              <Search className="h-3.5 w-3.5" />
+              Normal Search
             </button>
             <button
               onClick={() => {
                 setSearchMode("rag");
+                setRagData(null);
+                setNormalResults([]);
               }}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-medium transition-all hover:scale-105 active:scale-95 cursor-pointer ${
                 searchMode === "rag"
@@ -178,28 +167,11 @@ function SearchPage() {
           <SearchBar
             value={q}
             onChange={setQ}
-            onSubmit={(queryVal) => onSubmit(queryVal, 1)}
+            onSubmit={(queryVal) => onSubmit(queryVal)}
             onCancel={handleCancelSearch}
             loading={loading}
             size="lg"
           />
-        </div>
-
-        <div className="mt-6 flex flex-wrap items-center gap-2">
-          {categories.map((c) => (
-            <button
-              key={c}
-              onClick={() => setCat(c)}
-              className={`rounded-full border px-3 py-1.5 text-xs transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                cat === c ? "bg-ai-gradient text-white border-transparent shadow-ai" : "border-border bg-surface text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {c}
-            </button>
-          ))}
-          <button onClick={() => setShowFilters((v) => !v)} className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs hover:bg-surface-elevated hover:scale-105 active:scale-95 transition-all cursor-pointer">
-            <SlidersHorizontal className="h-3.5 w-3.5" /> {showFilters ? "Hide" : "Show"} Filters
-          </button>
         </div>
       </section>
 
@@ -210,37 +182,11 @@ function SearchPage() {
             className="space-y-5 rounded-2xl border border-border bg-card-gradient p-5 h-fit lg:sticky lg:top-20 shadow-sm"
           >
             <div className="flex items-center gap-2 text-sm font-semibold">
-              <Filter className="h-4 w-4 text-ai-purple" /> Advanced Filters
+              <Filter className="h-4 w-4 text-ai-purple" /> Dynamic Metrics
             </div>
-
-            <div>
-              <Label>Max price <span className="text-ai-gradient font-semibold">${price}</span></Label>
-              <input type="range" min={50} max={2000} step={10} value={price} onChange={(e) => setPrice(+e.target.value)} className="w-full accent-[var(--ai-purple)] cursor-pointer" />
+            <div className="text-xs text-muted-foreground leading-relaxed">
+              No static filters active. Queries are run dynamically against the global product repository.
             </div>
-
-            <div>
-              <Label>Semantic match score <span className="text-ai-gradient font-semibold">{Math.round(minScore * 100)}%+</span></Label>
-              <input type="range" min={0.5} max={0.99} step={0.01} value={minScore} onChange={(e) => setMinScore(+e.target.value)} className="w-full accent-[var(--ai-purple)] cursor-pointer" />
-            </div>
-
-            <ChipGroup label="Brand" options={brands.slice(0, 8)} selected={selBrands} onToggle={(v) => setSelBrands((s) => s.includes(v) ? s.filter((x) => x !== v) : [...s, v])} />
-            <ChipGroup label="Vendor source" options={sources.slice(0, 8)} selected={selSources} onToggle={(v) => setSelSources((s) => s.includes(v) ? s.filter((x) => x !== v) : [...s, v])} />
-
-            <div>
-              <Label>Color Filter</Label>
-              <div className="flex flex-wrap gap-2">
-                {["Obsidian","Oak","Midnight","Silver","Stone","Black","Sand"].map((c) => (
-                  <span key={c} className="rounded-full border border-border bg-surface px-2.5 py-1 text-[11px] text-muted-foreground select-none hover:bg-surface-elevated cursor-pointer transition">{c}</span>
-                ))}
-              </div>
-            </div>
-
-            <button
-              onClick={() => { setCat("All"); setPrice(2000); setMinScore(0.7); setSelBrands([]); setSelSources([]); }}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-border py-2 text-xs hover:bg-surface-elevated hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
-            >
-              <X className="h-3.5 w-3.5" /> Clear All Filters
-            </button>
           </aside>
         )}
 
@@ -263,7 +209,7 @@ function SearchPage() {
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-3">
                       <div className="inline-flex items-center gap-2 rounded-full bg-ai-gradient px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
-                        <Award className="h-3.5 w-3.5" /> Top Organic Choice
+                        <Award className="h-3.5 w-3.5" /> Top Recommendation Choice
                       </div>
                       <h3 className="font-display text-xl lg:text-2xl font-black text-foreground">
                         {ragData.topRecommendation.title}
@@ -299,26 +245,30 @@ function SearchPage() {
                     AI-synthesized matches for{" "}
                     <span className="text-ai-gradient font-medium">"{ragData.query}"</span>
                   </>
-                ) : (
+                ) : normalResults.length > 0 ? (
                   <>
                     <span className="font-semibold text-foreground">
-                      {filteredLocalProducts.length}
+                      {normalResults.length}
                     </span>{" "}
-                    local matches for{" "}
+                    results for{" "}
                     <span className="text-ai-gradient font-medium">"{q}"</span>
+                  </>
+                ) : (
+                  <>
+                    No search results loaded.
                   </>
                 )}
               </div>
               <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="h-1.5 w-1.5 rounded-full bg-ai-electric animate-pulse" /> Vectorized & Ranked
+                <span className="h-1.5 w-1.5 rounded-full bg-ai-electric animate-pulse" /> Live Repository Search
               </div>
             </div>
 
             {loading ? (
-              <LoadingAnimation />
+              searchMode === "rag" ? <LoadingAnimation /> : <NormalLoadingAnimation />
             ) : searchMode === "rag" ? (
               !ragData || ragData.products.length === 0 ? (
-                <EmptyState onSelectSuggestion={(s) => { setQ(s); onSubmit(s, 1); }} />
+                <EmptyState onSelectSuggestion={(s) => { setQ(s); onSubmit(s); }} />
               ) : (
                 <div className="space-y-8">
                   <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -326,34 +276,14 @@ function SearchPage() {
                       <RagProductCard key={i} product={p} rank={i} onClick={() => setSelectedProduct(p)} />
                     ))}
                   </div>
-
-                  {/* UI Pagination Controls */}
-                  <div className="flex items-center justify-center gap-4 border-t border-border/40 pt-6">
-                    <button
-                      onClick={() => handlePageChange(page - 1)}
-                      disabled={page <= 1}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated hover:scale-105 active:scale-95 transition-all disabled:opacity-40 disabled:hover:bg-surface disabled:hover:scale-100 cursor-pointer"
-                    >
-                      <ChevronLeft className="h-4 w-4" /> Previous
-                    </button>
-                    <span className="text-xs font-mono font-bold text-foreground">
-                      Page {page}
-                    </span>
-                    <button
-                      onClick={() => handlePageChange(page + 1)}
-                      className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-surface-elevated hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                    >
-                      Next <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
                 </div>
               )
-            ) : filteredLocalProducts.length === 0 ? (
-              <EmptyState onSelectSuggestion={(s) => { setQ(s); onSubmit(s, 1); }} />
+            ) : normalResults.length === 0 ? (
+              <EmptyState onSelectSuggestion={(s) => { setQ(s); onSubmit(s); }} />
             ) : (
               <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {filteredLocalProducts.map((p, i) => (
-                  <ProductCard key={p.id} product={p} rank={i} />
+                {normalResults.map((p, i) => (
+                  <NormalProductCard key={i} product={p} onClick={() => setSelectedProduct(p)} />
                 ))}
               </div>
             )}
@@ -394,9 +324,11 @@ function SearchPage() {
                   <span className="rounded-full bg-ai-electric/15 border border-ai-electric/25 px-2.5 py-0.5 text-[10px] font-semibold text-ai-electric">
                     {selectedProduct.store}
                   </span>
-                  <span className="rounded-full bg-white/5 border border-border px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                    {selectedProduct.category || "General"}
-                  </span>
+                  {isRagProduct(selectedProduct) && (
+                    <span className="rounded-full bg-white/5 border border-border px-2.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {selectedProduct.category || "General"}
+                    </span>
+                  )}
                 </div>
                 <h2 className="font-display text-xl lg:text-2xl font-bold leading-snug text-foreground">
                   {selectedProduct.title}
@@ -413,36 +345,40 @@ function SearchPage() {
               </div>
             </div>
 
-            {/* AI Research Details */}
-            <div className="space-y-3 border-t border-border/40 pt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-ai-purple animate-pulse" /> AI Synthesis Summary
-              </h3>
-              <p className="text-sm leading-relaxed text-foreground/90 font-light bg-surface/30 border border-border/30 rounded-2xl p-4">
-                {selectedProduct.summary}
-              </p>
-            </div>
-
-            {/* Specifications Details */}
-            <div className="space-y-3 border-t border-border/40 pt-4">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                <Layers className="h-3.5 w-3.5 text-ai-electric" /> Product Specifications
-              </h3>
-              {selectedProduct.specs && Object.keys(selectedProduct.specs).length > 0 ? (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {Object.entries(selectedProduct.specs).map(([key, val]) => (
-                    <div key={key} className="flex justify-between items-center text-xs p-2.5 rounded-xl border border-border/30 bg-surface/20">
-                      <span className="text-muted-foreground capitalize">{key}</span>
-                      <span className="font-semibold text-foreground/90">{String(val)}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground italic pl-1">
-                  No detailed specifications listed for this product.
+            {/* AI Research Details (RAG only) */}
+            {isRagProduct(selectedProduct) && (
+              <div className="space-y-3 border-t border-border/40 pt-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-ai-purple animate-pulse" /> AI Synthesis Summary
+                </h3>
+                <p className="text-sm leading-relaxed text-foreground/90 font-light bg-surface/30 border border-border/30 rounded-2xl p-4">
+                  {selectedProduct.summary}
                 </p>
-              )}
-            </div>
+              </div>
+            )}
+
+            {/* Specifications Details (RAG only) */}
+            {isRagProduct(selectedProduct) && (
+              <div className="space-y-3 border-t border-border/40 pt-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <Layers className="h-3.5 w-3.5 text-ai-electric" /> Product Specifications
+                </h3>
+                {selectedProduct.specs && Object.keys(selectedProduct.specs).length > 0 ? (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {Object.entries(selectedProduct.specs).map(([key, val]) => (
+                      <div key={key} className="flex justify-between items-center text-xs p-2.5 rounded-xl border border-border/30 bg-surface/20">
+                        <span className="text-muted-foreground capitalize">{key}</span>
+                        <span className="font-semibold text-foreground/90">{String(val)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic pl-1">
+                    No detailed specifications listed for this product.
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Footer actions */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-border/40">
@@ -472,40 +408,16 @@ function Label({ children }: { children: React.ReactNode }) {
   return <div className="mb-2 flex items-center justify-between text-xs text-muted-foreground">{children}</div>;
 }
 
-function ChipGroup({ label, options, selected, onToggle }: { label: string; options: string[]; selected: string[]; onToggle: (v: string) => void }) {
-  return (
-    <div>
-      <Label>{label}</Label>
-      <div className="flex flex-wrap gap-1.5">
-        {options.map((o) => {
-          const on = selected.includes(o);
-          return (
-            <button
-              key={o}
-              onClick={() => onToggle(o)}
-              className={`rounded-full border px-2.5 py-1 text-[11px] transition-all hover:scale-105 active:scale-95 cursor-pointer ${
-                on ? "bg-ai-gradient text-white border-transparent" : "border-border bg-surface text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {o}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function EmptyState({ onSelectSuggestion }: { onSelectSuggestion: (s: string) => void }) {
   return (
     <div className="rounded-3xl border border-border bg-card-gradient p-12 text-center">
       <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-ai-gradient/15 ring-1 ring-ai-indigo/30">
         <Sparkles className="h-7 w-7 text-ai-purple" />
       </div>
-      <h3 className="mt-5 font-display text-xl font-semibold">No semantic matches</h3>
-      <p className="mt-2 text-sm text-muted-foreground">Try relaxing your filters or rephrasing the query with more contextual intent.</p>
+      <h3 className="mt-5 font-display text-xl font-semibold">No matches</h3>
+      <p className="mt-2 text-sm text-muted-foreground">Type a keyword or item description in the search bar above to begin.</p>
       <div className="mt-5 flex flex-wrap justify-center gap-2">
-        {["black t shirts","wireless mechanical keyboard","ergonomic chair with lumbar support"].map((s) => (
+        {["gaming laptop","black t shirts","wireless mechanical keyboard"].map((s) => (
           <button
             key={s}
             onClick={() => onSelectSuggestion(s)}

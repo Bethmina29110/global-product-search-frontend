@@ -9,4 +9,7 @@ export const ENDPOINTS = {
   RAG: {
     SEARCH: "/rag/search",
   },
+  SEARCH: {
+    NORMAL: "/search",
+  },
 };

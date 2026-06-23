@@ -66,3 +66,17 @@ export interface RagSearchData {
   };
   products: RagProduct[];
 }
+
+export interface SearchProduct {
+  title: string;
+  price: string;
+  rating: number | null;
+  imageUrl: string;
+  store: string;
+  productUrl: string;
+}
+
+export interface SearchResultData {
+  query: string;
+  results: SearchProduct[];
+}
