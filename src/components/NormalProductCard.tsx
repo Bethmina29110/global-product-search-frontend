@@ -9,11 +9,20 @@ interface NormalProductCardProps {
 
 export function NormalProductCard({ product, onClick }: NormalProductCardProps) {
   const { favorites, toggleFavorite } = useApp();
-  const isFavorite = favorites.includes(product.title);
+  const isFavorite = favorites.some((f) => f.title === product.title);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    toggleFavorite(product.title);
+    toggleFavorite({
+      title: product.title,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      store: product.store,
+      productUrl: product.productUrl,
+      rating: product.rating ?? undefined,
+      category: "General",
+      summary: "",
+    });
   };
 
   const handleLinkClick = (e: React.MouseEvent) => {

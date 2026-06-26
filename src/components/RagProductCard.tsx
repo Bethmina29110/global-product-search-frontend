@@ -10,12 +10,21 @@ interface RagProductCardProps {
 
 export function RagProductCard({ product, rank, onClick }: RagProductCardProps) {
   const { favorites, toggleFavorite } = useApp();
-  const isFavorite = favorites.includes(product.title);
+  const isFavorite = favorites.some((f) => f.title === product.title);
   const bestMatch = rank === 0;
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Avoid triggering card details modal onClick
-    toggleFavorite(product.title);
+    toggleFavorite({
+      title: product.title,
+      price: product.price,
+      imageUrl: product.imageUrl,
+      store: product.store,
+      productUrl: product.productUrl,
+      rating: product.rating ?? undefined,
+      category: product.category,
+      summary: product.summary,
+    });
   };
 
   const handleLinkClick = (e: React.MouseEvent) => {

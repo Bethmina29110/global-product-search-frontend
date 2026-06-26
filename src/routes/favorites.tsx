@@ -2,14 +2,28 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Heart, Sparkles } from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { useApp } from "@/context/AppContext";
-import { products } from "@/lib/mockData";
 import { ProductCard } from "@/components/ProductCard";
+import { Product } from "@/lib/mockData";
 
 export const Route = createFileRoute("/favorites")({ component: FavoritesPage });
 
 function FavoritesPage() {
   const { favorites } = useApp();
-  const saved = products.filter((p) => favorites.includes(p.id));
+  
+  const saved: Product[] = favorites.map(f => ({
+    id: f.id.toString(),
+    name: f.title,
+    price: Number(f.price) || 0,
+    rating: f.rating || 0,
+    image: f.imageUrl || "",
+    source: f.store || "",
+    brand: "",
+    description: f.summary || "",
+    similarity_score: 0,
+    tags: f.category ? [f.category] : [],
+    category: f.category || "",
+    color: "",
+  }));
 
   return (
     <DashboardLayout title="Favorites">

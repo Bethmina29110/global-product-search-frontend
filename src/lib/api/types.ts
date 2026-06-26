@@ -82,3 +82,20 @@ export interface SearchResultData {
   query: string;
   results: SearchProduct[];
 }
+
+export interface Favourite {
+  id: number;
+  userId: number;
+  title: string;
+  price?: string;
+  imageUrl?: string;
+  store?: string;
+  productUrl?: string;
+  rating?: number;
+  category?: string;
+  summary?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type SaveFavouriteDto = Omit<Favourite, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;

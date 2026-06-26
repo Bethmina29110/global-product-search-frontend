@@ -12,4 +12,8 @@ export const ENDPOINTS = {
   SEARCH: {
     NORMAL: "/search",
   },
+  FAVOURITES: {
+    BASE: "/favourites",
+    BY_ID: (id: number) => `/favourites/${id}`,
+  },
 };

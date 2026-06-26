@@ -6,8 +6,21 @@ import { useApp } from "@/context/AppContext";
 
 export function ProductCard({ product, rank }: { product: Product; rank?: number }) {
   const { favorites, toggleFavorite } = useApp();
-  const fav = favorites.includes(product.id);
+  const fav = favorites.some((f) => f.title === product.name);
   const best = rank === 0;
+
+  const handleToggle = () => {
+    toggleFavorite({
+      title: product.name,
+      price: product.price.toString(),
+      imageUrl: product.image,
+      store: product.source,
+      productUrl: `/product/${product.id}`,
+      rating: product.rating,
+      category: product.tags[0] || "Unknown",
+      summary: product.description,
+    });
+  };
 
   return (
     <div
@@ -19,7 +32,7 @@ export function ProductCard({ product, rank }: { product: Product; rank?: number
         </div>
       )}
       <button
-        onClick={() => toggleFavorite(product.id)}
+        onClick={handleToggle}
         aria-label="favorite"
         className="absolute top-3 right-3 z-10 grid h-9 w-9 place-items-center rounded-full glass hover:bg-white/10 transition"
       >

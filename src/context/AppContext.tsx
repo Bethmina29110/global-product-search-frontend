@@ -1,10 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { User } from "@/lib/api/types";
+import { User, Favourite, SaveFavouriteDto } from "@/lib/api/types";
 import { authApi } from "@/lib/api/auth";
+import { favoritesApi } from "@/lib/api/favorites";
+import { toast } from "sonner";
 
 interface AppCtx {
-  favorites: string[];
-  toggleFavorite: (id: string) => void;
+  favorites: Favourite[];
+  toggleFavorite: (product: SaveFavouriteDto) => Promise<void>;
+  fetchFavorites: () => Promise<void>;
   theme: "dark" | "light";
   toggleTheme: () => void;
   user: User | null;
@@ -16,10 +19,24 @@ interface AppCtx {
 const Ctx = createContext<AppCtx | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<Favourite[]>([]);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [user, setUser] = useState<User | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
+
+  const fetchFavorites = async () => {
+    if (!localStorage.getItem("accessToken")) return;
+    try {
+      const res = await favoritesApi.getFavorites();
+      if (res && Array.isArray(res)) {
+        setFavorites(res);
+      } else if (res && (res as any).data) { // Fallback if it has standard response wrapper
+        setFavorites((res as any).data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch favorites:", err);
+    }
+  };
 
   const fetchUser = async () => {
     if (typeof window === "undefined") return;
@@ -27,6 +44,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!token) {
       setUser(null);
       setLoadingUser(false);
+      setFavorites([]);
       return;
     }
     try {
@@ -34,6 +52,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const res = await authApi.getProfile();
       if (res && res.data) {
         setUser(res.data);
+        fetchFavorites();
       } else {
         setUser(null);
       }
@@ -55,8 +74,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     document.documentElement.classList.add(theme);
   }, [theme]);
 
-  const toggleFavorite = (id: string) =>
-    setFavorites((f) => (f.includes(id) ? f.filter((x) => x !== id) : [...f, id]));
+  const toggleFavorite = async (product: SaveFavouriteDto) => {
+    if (!user) {
+      toast.error("Please log in to save favorites.");
+      return;
+    }
+    try {
+      const existingFav = favorites.find((f) => f.title === product.title);
+      if (existingFav) {
+        await favoritesApi.removeFavorite(existingFav.id);
+        setFavorites((f) => f.filter((x) => x.id !== existingFav.id));
+        toast.success("Removed from favorites");
+      } else {
+        const res = await favoritesApi.saveFavorite(product);
+        const newFav = res && (res as any).data ? (res as any).data : res;
+        setFavorites((f) => [...f, newFav]);
+        toast.success("Added to favorites");
+      }
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err);
+      toast.error("Failed to save favorite.");
+    }
+  };
+
   const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
 
   const logout = async () => {
@@ -68,6 +108,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem("refreshToken");
     } finally {
       setUser(null);
+      setFavorites([]);
     }
   };
 
@@ -76,6 +117,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       value={{
         favorites,
         toggleFavorite,
+        fetchFavorites,
         theme,
         toggleTheme,
         user,
