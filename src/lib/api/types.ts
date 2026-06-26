@@ -42,9 +42,11 @@ export interface RegisterCredentials {
 export interface RagProduct {
   title: string;
   category: string;
-  specs: Record<string, any>;
+  specifications: Record<string, any>;
+  specs?: Record<string, any>; // legacy fallback
   confidence: number;
   summary: string;
+  reasoning?: string;
   score: number;
   productUrl: string;
   imageUrl: string;

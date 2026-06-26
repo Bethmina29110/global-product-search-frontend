@@ -22,7 +22,9 @@ export function RagProductCard({ product, rank, onClick }: RagProductCardProps) 
     e.stopPropagation(); // Avoid triggering card details modal onClick
   };
 
-  const hasSpecs = product.specs && Object.keys(product.specs).length > 0;
+  // Support both new `specifications` field and legacy `specs` field
+  const productSpecs = product.specifications || product.specs || {};
+  const hasSpecs = Object.keys(productSpecs).length > 0;
 
   return (
     <div
@@ -107,7 +109,7 @@ export function RagProductCard({ product, rank, onClick }: RagProductCardProps) 
               <span className="inline-flex items-center gap-1 rounded bg-ai-purple/10 px-1.5 py-0.5 text-[9px] text-ai-purple font-medium border border-ai-purple/20">
                 <Layers className="h-2.5 w-2.5" /> Specs Available
               </span>
-              {Object.entries(product.specs).slice(0, 2).map(([key, val]) => (
+              {Object.entries(productSpecs).slice(0, 2).map(([key, val]) => (
                 <span key={key} className="rounded bg-white/5 border border-border px-1.5 py-0.5 text-[9px] text-muted-foreground max-w-[120px] truncate">
                   {key}: {String(val)}
                 </span>
