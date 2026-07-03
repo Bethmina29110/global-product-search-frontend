@@ -1,21 +1,11 @@
 export function NormalLoadingAnimation() {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3 animate-pulse">
-      {[1, 2, 3, 4, 5, 6].map((i) => (
-        <div key={i} className="rounded-2xl border border-border bg-card-gradient/30 p-5 space-y-4 h-[320px] flex flex-col justify-between">
-          <div className="space-y-3">
-            {/* Image Skeleton */}
-            <div className="aspect-[4/3] w-full rounded-xl bg-surface/50" />
-            
-            {/* Text Skeletons */}
-            <div className="h-4 w-3/4 rounded bg-surface/50" />
-            <div className="h-3 w-1/2 rounded bg-surface/30" />
-          </div>
-          
-          {/* Button Skeleton */}
-          <div className="h-10 w-full rounded-xl bg-surface/50" />
-        </div>
-      ))}
+    <div className="flex flex-col items-center justify-center py-32 gap-5 text-muted-foreground animate-in fade-in duration-500">
+      <div className="relative flex items-center justify-center h-14 w-14">
+        <div className="absolute inset-0 rounded-full border-4 border-surface-elevated"></div>
+        <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin"></div>
+      </div>
+      <p className="text-sm font-medium animate-pulse tracking-wide">Searching repository...</p>
     </div>
   );
 }

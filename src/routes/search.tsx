@@ -83,9 +83,9 @@ function SearchPage() {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
-      setLoading(false);
-      toast.info("Search request stopped.");
     }
+    setLoading(false);
+    toast.info("Search request stopped.");
   };
 
   const handleClearResults = () => {
@@ -131,6 +131,8 @@ function SearchPage() {
     if (currentMode === "rag") {
       try {
         const response = await ragApi.search(searchQuery, controller.signal);
+        if (controller.signal.aborted) return;
+        
         if (response && response.success) {
           setRagData(response.data);
           setNormalResults([]);
@@ -150,7 +152,7 @@ function SearchPage() {
           toast.error("Failed to load search results.");
         }
       } catch (err: any) {
-        if (axios.isCancel(err) || err.name === "CanceledError" || err.code === "ERR_CANCELED") {
+        if (axios.isCancel(err) || err.name === "CanceledError" || err.code === "ERR_CANCELED" || controller.signal.aborted) {
           console.log("RAG search query aborted by user.");
           return;
         }
@@ -168,6 +170,8 @@ function SearchPage() {
       // Normal search
       try {
         const response = await searchApi.search(searchQuery, controller.signal);
+        if (controller.signal.aborted) return;
+        
         if (response && response.success) {
           setNormalResults(response.data.results);
           setRagData(null);
@@ -187,7 +191,7 @@ function SearchPage() {
           toast.error("Failed to load search results.");
         }
       } catch (err: any) {
-        if (axios.isCancel(err) || err.name === "CanceledError" || err.code === "ERR_CANCELED") {
+        if (axios.isCancel(err) || err.name === "CanceledError" || err.code === "ERR_CANCELED" || controller.signal.aborted) {
           console.log("Normal search query aborted by user.");
           return;
         }

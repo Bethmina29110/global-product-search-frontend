@@ -84,7 +84,11 @@ export function SearchBar({ value, onChange, onSubmit, onCancel, size = "md", lo
         {loading ? (
           <button
             type="button"
-            onClick={onCancel}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onCancel?.();
+            }}
             className="inline-flex items-center gap-1.5 rounded-xl bg-destructive px-4 py-2 text-sm font-semibold text-white shadow-ai hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer"
           >
             <Loader2 className="h-4 w-4 animate-spin" /> Stop
