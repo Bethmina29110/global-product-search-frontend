@@ -99,3 +99,18 @@ export interface Favourite {
 }
 
 export type SaveFavouriteDto = Omit<Favourite, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
+
+export interface SavedSearch {
+  id: number;
+  userId: number;
+  query: string;
+  type: string;
+  matchesCount: number;
+  createdAt: string;
+}
+
+export type SaveSearchDto = {
+  query: string;
+  type: string;
+  matchesCount: number;
+};

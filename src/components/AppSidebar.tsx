@@ -23,7 +23,7 @@ export function AppSidebar() {
   };
 
   return (
-    <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-sidebar/60 backdrop-blur-xl">
+    <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r border-border bg-sidebar/60 backdrop-blur-xl sticky top-0 h-screen overflow-y-auto">
       <Link to="/" className="flex items-center gap-2.5 px-6 py-5 border-b border-border">
         <div className="relative grid h-9 w-9 place-items-center rounded-xl bg-ai-gradient shadow-ai">
           <Brain className="h-5 w-5 text-white" />

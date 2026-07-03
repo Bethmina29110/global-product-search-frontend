@@ -6,7 +6,7 @@ export function DashboardLayout({ children, title }: { children: ReactNode; titl
   return (
     <div className="min-h-screen w-full bg-background">
       <div className="pointer-events-none fixed inset-0 grid-bg opacity-40" />
-      <div className="relative flex">
+      <div className="relative flex min-h-screen">
         <AppSidebar />
         <div className="flex-1 min-w-0">
           <TopNav title={title} />

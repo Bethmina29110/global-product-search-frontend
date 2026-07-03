@@ -5,3 +5,4 @@ export * from "./types";
 export * from "./rag";
 export * from "./search";
 export * from "./favorites";
+export * from "./saved-searches";

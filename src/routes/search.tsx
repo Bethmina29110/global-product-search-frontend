@@ -9,6 +9,7 @@ import { LoadingAnimation } from "@/components/LoadingAnimation";
 import { NormalLoadingAnimation } from "@/components/NormalLoadingAnimation";
 import { searchApi } from "@/lib/api/search";
 import { ragApi } from "@/lib/api/rag";
+import { savedSearchesApi } from "@/lib/api/saved-searches";
 import { RagSearchData, RagProduct, SearchProduct } from "@/lib/api/types";
 import { toast } from "sonner";
 import axios from "axios";
@@ -110,6 +111,16 @@ function SearchPage() {
           setRagData(response.data);
           setNormalResults([]);
           toast.success(`Loaded RAG results!`);
+          
+          try {
+            await savedSearchesApi.saveSearch({
+              query: searchQuery,
+              type: "rag",
+              matchesCount: response.data.products.length,
+            });
+          } catch (err) {
+            console.error("Failed to save search history:", err);
+          }
         } else {
           setError("Failed to fetch search results from server.");
           toast.error("Failed to load search results.");
@@ -137,6 +148,16 @@ function SearchPage() {
           setNormalResults(response.data.results);
           setRagData(null);
           toast.success("Normal search complete!");
+          
+          try {
+            await savedSearchesApi.saveSearch({
+              query: searchQuery,
+              type: "normal",
+              matchesCount: response.data.results.length,
+            });
+          } catch (err) {
+            console.error("Failed to save search history:", err);
+          }
         } else {
           setError("Failed to fetch search results from server.");
           toast.error("Failed to load search results.");
