@@ -5,29 +5,47 @@ import { useApp } from "@/context/AppContext";
 import { NormalProductCard } from "@/components/NormalProductCard";
 import type { SearchProduct, Favourite } from "@/lib/api/types";
 import { useEffect, useState } from "react";
+import { favoritesApi } from "@/lib/api/favorites";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/favorites")({ component: FavoritesPage });
 
 function FavoritesPage() {
-  const { favorites, fetchFavorites } = useApp();
+  const { favorites: globalFavorites } = useApp(); // Used to check if favorite, though NormalProductCard already handles this
+  const [localFavorites, setLocalFavorites] = useState<Favourite[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedFavorite, setSelectedFavorite] = useState<Favourite | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchPage = async (pageNum: number) => {
+    try {
+      setLoading(true);
+      const res = await favoritesApi.getFavorites(pageNum, 20);
+      if (res && 'meta' in res) {
+        setLocalFavorites(res.data);
+        setTotalPages(res.meta.totalPages);
+      } else {
+        setLocalFavorites(res as Favourite[]);
+        setTotalPages(1);
+      }
+    } catch (err) {
+      console.error("Failed to load favorites page:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true;
-    fetchFavorites().finally(() => {
-      if (mounted) setLoading(false);
-    });
-    return () => { mounted = false; };
-  }, []);
+    fetchPage(page);
+  }, [page, globalFavorites.length]); // Refresh if global favorites change (added/removed)
 
   return (
     <DashboardLayout title="Favorites">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold">Your saved products</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{favorites.length} item{favorites.length === 1 ? "" : "s"} saved for later</p>
+          <p className="mt-1 text-sm text-muted-foreground">{localFavorites.length} item{localFavorites.length === 1 ? "" : "s"} on this page</p>
         </div>
       </div>
       
@@ -35,7 +53,7 @@ function FavoritesPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-ai-purple" />
         </div>
-      ) : favorites.length === 0 ? (
+      ) : localFavorites.length === 0 ? (
         <div className="rounded-3xl border border-border bg-card-gradient p-12 text-center">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-ai-gradient/15"><Heart className="h-7 w-7 text-ai-purple" /></div>
           <h3 className="mt-5 font-display text-xl font-semibold">No favorites yet</h3>
@@ -46,7 +64,7 @@ function FavoritesPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:gap-5 grid-cols-2 md:grid-cols-3 xl:grid-cols-4">
-          {favorites.map((f) => {
+          {localFavorites.map((f) => {
             const productProps: SearchProduct = {
               title: f.title,
               price: f.price || "N/A",
@@ -63,6 +81,28 @@ function FavoritesPage() {
               />
             );
           })}
+        </div>
+      )}
+
+      {!loading && totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="rounded-xl border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-muted-foreground font-medium">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="rounded-xl border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+          >
+            Next
+          </button>
         </div>
       )}
 

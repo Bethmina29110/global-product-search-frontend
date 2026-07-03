@@ -1,4 +1,4 @@
-import { Bell, Moon, Sun, Sparkles, User } from "lucide-react";
+import { Moon, Sun, Sparkles, User } from "lucide-react";
 import { useApp } from "@/context/AppContext";
 
 export function TopNav({ title }: { title?: string }) {
@@ -26,10 +26,6 @@ export function TopNav({ title }: { title?: string }) {
       <div className="flex items-center gap-2">
         <button onClick={toggleTheme} aria-label="theme" className="grid h-9 w-9 place-items-center rounded-xl border border-border bg-surface hover:bg-surface-elevated transition">
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
-        <button aria-label="notifications" className="relative grid h-9 w-9 place-items-center rounded-xl border border-border bg-surface hover:bg-surface-elevated transition">
-          <Bell className="h-4 w-4" />
-          <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-ai-electric" />
         </button>
         <div className="flex items-center gap-2 rounded-xl border border-border bg-surface px-2.5 py-1.5">
           <div className="grid h-7 w-7 place-items-center rounded-lg bg-ai-gradient text-white text-xs font-semibold">

@@ -11,22 +11,31 @@ export const Route = createFileRoute("/saved-searches")({ component: SavedSearch
 function SavedSearchesPage() {
   const [searches, setSearches] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchSearches = async (pageNum: number) => {
+    try {
+      setLoading(true);
+      const res = await savedSearchesApi.getSavedSearches(pageNum, 20);
+      if (res && 'meta' in res) {
+        setSearches(res.data);
+        setTotalPages(res.meta.totalPages);
+      } else {
+        setSearches(res as SavedSearch[]);
+        setTotalPages(1);
+      }
+    } catch (err) {
+      console.error("Failed to load saved searches:", err);
+      toast.error("Failed to load saved searches.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true;
-    savedSearchesApi.getSavedSearches()
-      .then(res => {
-        if (mounted) setSearches(res);
-      })
-      .catch(err => {
-        console.error("Failed to load saved searches:", err);
-        toast.error("Failed to load saved searches.");
-      })
-      .finally(() => {
-        if (mounted) setLoading(false);
-      });
-    return () => { mounted = false; };
-  }, []);
+    fetchSearches(page);
+  }, [page]);
 
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
@@ -100,6 +109,29 @@ function SavedSearchesPage() {
           ))
         )}
       </div>
+
+      {!loading && totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-3">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="rounded-xl border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-muted-foreground font-medium">
+            Page {page} of {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="rounded-xl border border-border bg-surface px-4 py-2 text-sm font-medium hover:bg-surface-elevated disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
       <div className="mt-6 inline-flex items-center gap-2 text-xs text-muted-foreground">
         <Sparkles className="h-3.5 w-3.5 text-ai-purple" /> Saved searches are re-embedded automatically when products update.
       </div>

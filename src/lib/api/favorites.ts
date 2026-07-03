@@ -1,13 +1,23 @@
 import { apiClient } from "./client";
 import { ENDPOINTS } from "./endpoints";
-import { Favourite, SaveFavouriteDto } from "./types";
+import { Favourite, SaveFavouriteDto, PaginatedResult } from "./types";
 
 export const favoritesApi = {
-  getFavorites: async (): Promise<Favourite[]> => {
-    const response = await apiClient.get<Favourite[]>(ENDPOINTS.FAVOURITES.BASE);
-    // Based on standard NestJS responses or our ApiResponse wrapper, the data might be in response.data.data or response.data
-    // Checking standard structure from controller without ApiResponse wrapper, so it might just be response.data
-    return response.data;
+  getFavorites: async (page: number = 1, limit: number = 20): Promise<PaginatedResult<Favourite> | Favourite[]> => {
+    const response = await apiClient.get<any>(ENDPOINTS.FAVOURITES.BASE, { params: { page, limit } });
+    const body = response.data;
+    const actualData = body?.success !== undefined && body?.data !== undefined ? body.data : body;
+
+    // Check if the flattened meta contains pagination info from NestJS interceptor
+    if (body?.meta && body.meta.totalPages !== undefined && Array.isArray(actualData)) {
+      return {
+        data: actualData,
+        meta: body.meta as any
+      };
+    }
+    
+    if (Array.isArray(actualData)) return actualData;
+    return actualData || [];
   },
 
   saveFavorite: async (data: SaveFavouriteDto): Promise<Favourite> => {
