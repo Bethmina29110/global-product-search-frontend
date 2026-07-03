@@ -57,23 +57,16 @@ export function AppSidebar() {
           );
         })}
 
+      </nav>
+
+      <div className="px-3 pb-4 mt-auto">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition"
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition cursor-pointer"
         >
           <LogOut className="h-4 w-4" />
           Logout
         </button>
-      </nav>
-
-      <div className="m-3 rounded-2xl border border-border bg-card-gradient p-4">
-        <div className="flex items-center gap-2 text-xs font-semibold">
-          <span className="h-2 w-2 rounded-full bg-ai-electric animate-pulse" />
-          AI Service Online
-        </div>
-        <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
-          all-MiniLM-L6-v2 · 384-d embeddings · cosine similarity ranking
-        </p>
       </div>
     </aside>
   );

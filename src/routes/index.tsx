@@ -285,7 +285,7 @@ function Landing() {
               <div className="grid h-8 w-8 place-items-center rounded-lg bg-ai-gradient"><Brain className="h-4 w-4 text-white" /></div>
               <span className="font-display font-bold">Semantix</span>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">AI semantic product search & aggregation platform. University final-year project.</p>
+            <p className="mt-3 text-xs text-muted-foreground">AI semantic product search & aggregation platform.</p>
           </div>
           <div>
             <div className="text-xs uppercase tracking-wider text-muted-foreground">Product</div>
@@ -313,7 +313,7 @@ function Landing() {
         </div>
         <div className="border-t border-border">
           <div className="mx-auto max-w-7xl px-6 py-5 text-xs text-muted-foreground flex flex-wrap justify-between gap-2">
-            <span>© {new Date().getFullYear()} Semantix · Final Year Project</span>
+            <span>© {new Date().getFullYear()} Global Product Search Platform</span>
             <span>Made with semantic AI · all-MiniLM-L6-v2</span>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Brain, Mail, Lock, ArrowRight, Github } from "lucide-react";
+import { Brain, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
@@ -10,6 +10,7 @@ export const Route = createFileRoute("/login")({ component: LoginPage });
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
@@ -17,6 +18,11 @@ function LoginPage() {
 
   useEffect(() => {
     setMounted(true);
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -40,6 +46,13 @@ function LoginPage() {
         });
         localStorage.setItem("accessToken", response.data.accessToken);
         localStorage.setItem("refreshToken", response.data.refreshToken);
+        
+        if (rememberMe) {
+          localStorage.setItem("rememberedEmail", email);
+        } else {
+          localStorage.removeItem("rememberedEmail");
+        }
+
         await fetchUser();
         toast.success("Successfully logged in!");
         navigate({ to: "/dashboard" });
@@ -78,7 +91,7 @@ function LoginPage() {
           </Link>
           <div className="space-y-6">
             <h2 className="font-display text-5xl font-bold leading-tight">
-              Search by <span className="text-ai-gradient">meaning</span>, not keywords.
+              Global <span className="text-ai-gradient">Product</span> Search.
             </h2>
             <p className="text-muted-foreground max-w-md">
               Sign in to access your AI-powered semantic product discovery dashboard, saved searches, and personalized embeddings.
@@ -90,7 +103,7 @@ function LoginPage() {
               </p>
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">© Semantix · Final-year project</p>
+          <p className="text-xs text-muted-foreground">© Global Product Search Platform</p>
         </div>
 
         <div className="flex items-center justify-center p-6 lg:p-12">
@@ -104,7 +117,7 @@ function LoginPage() {
                 icon={Mail}
                 label="Email"
                 type="email"
-                placeholder="you@university.edu"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
@@ -120,29 +133,18 @@ function LoginPage() {
               />
               <div className="flex items-center justify-between text-xs">
                 <label className="flex items-center gap-2 text-muted-foreground cursor-pointer">
-                  <input type="checkbox" className="accent-[var(--ai-purple)]" disabled={loading} /> Remember me
+                  <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="accent-[var(--ai-purple)]" disabled={loading} /> Remember me
                 </label>
                 <a href="#" className="text-ai-electric hover:underline">Forgot password?</a>
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-ai hover:opacity-95 disabled:opacity-50 transition"
+                className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-ai hover:opacity-95 disabled:opacity-50 transition"
               >
                 {loading ? "Signing in..." : "Sign in"} <ArrowRight className="h-4 w-4" />
               </button>
             </form>
-            <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-              <div className="h-px flex-1 bg-border" /> or continue with <div className="h-px flex-1 bg-border" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface py-2.5 text-sm hover:bg-surface-elevated">
-                <Github className="h-4 w-4" /> GitHub
-              </button>
-              <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-surface py-2.5 text-sm hover:bg-surface-elevated">
-                Google
-              </button>
-            </div>
             <p className="mt-6 text-center text-xs text-muted-foreground">
               No account? <Link to="/register" className="text-ai-electric hover:underline">Create one</Link>
             </p>
@@ -158,6 +160,10 @@ function Field({
   label,
   ...rest
 }: { icon: any; label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = rest.type === "password";
+  const type = isPassword ? (showPassword ? "text" : "password") : rest.type;
+
   return (
     <label className="block">
       <span className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</span>
@@ -165,8 +171,18 @@ function Field({
         <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           {...rest}
-          className="w-full rounded-xl border border-border bg-surface pl-10 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ai-indigo/40 disabled:opacity-50"
+          type={type}
+          className="w-full rounded-xl border border-border bg-surface pl-10 pr-10 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ai-indigo/40 disabled:opacity-50"
         />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
       </div>
     </label>
   );

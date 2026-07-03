@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { Brain, Mail, Lock, User as UserIcon, Phone, MapPin, ArrowRight } from "lucide-react";
+import { Brain, Mail, Lock, User as UserIcon, Phone, MapPin, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
@@ -160,6 +160,10 @@ function Field({
   label,
   ...rest
 }: { icon: any; label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = rest.type === "password";
+  const type = isPassword ? (showPassword ? "text" : "password") : rest.type;
+
   return (
     <label className="block">
       <span className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</span>
@@ -167,8 +171,18 @@ function Field({
         <Icon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           {...rest}
-          className="w-full rounded-xl border border-border bg-surface pl-10 pr-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ai-indigo/40 disabled:opacity-50"
+          type={type}
+          className="w-full rounded-xl border border-border bg-surface pl-10 pr-10 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ai-indigo/40 disabled:opacity-50"
         />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        )}
       </div>
     </label>
   );
