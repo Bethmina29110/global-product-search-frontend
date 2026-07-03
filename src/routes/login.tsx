@@ -144,7 +144,7 @@ function LoginPage() {
                 <label className="flex items-center gap-2 text-muted-foreground cursor-pointer">
                   <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="accent-[var(--ai-purple)]" disabled={loading} /> Remember me
                 </label>
-                <a href="#" className="text-ai-electric hover:underline">Forgot password?</a>
+                <Link to="/forgot-password" className="text-ai-electric hover:underline">Forgot password?</Link>
               </div>
               <button
                 type="submit"

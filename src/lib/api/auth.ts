@@ -24,6 +24,22 @@ export const authApi = {
     }
   },
 
+  forgotPassword: async (email: string): Promise<ApiResponse<{ message: string }>> => {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>(
+      ENDPOINTS.AUTH.FORGOT_PASSWORD,
+      { email }
+    );
+    return response.data;
+  },
+
+  resetPassword: async (data: any): Promise<ApiResponse<{ message: string }>> => {
+    const response = await apiClient.post<ApiResponse<{ message: string }>>(
+      ENDPOINTS.AUTH.RESET_PASSWORD,
+      data
+    );
+    return response.data;
+  },
+
   getProfile: async (): Promise<ApiResponse<User>> => {
     const response = await apiClient.get<ApiResponse<User>>(ENDPOINTS.AUTH.ME);
     return response.data;
