@@ -28,14 +28,19 @@ function SavedSearchesPage() {
     return () => { mounted = false; };
   }, []);
 
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
   const handleDelete = async (id: number) => {
     try {
+      setDeletingId(id);
       await savedSearchesApi.deleteSavedSearch(id);
       setSearches(prev => prev.filter(s => s.id !== id));
       toast.success("Search removed");
     } catch (err) {
       console.error("Failed to delete saved search:", err);
       toast.error("Failed to remove search");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -81,10 +86,15 @@ function SavedSearchesPage() {
               </Link>
               <button 
                 onClick={() => handleDelete(s.id)}
-                className="grid h-9 w-9 place-items-center rounded-xl border border-border bg-surface text-muted-foreground hover:text-destructive hover:bg-surface-elevated transition cursor-pointer" 
+                disabled={deletingId === s.id}
+                className="grid h-9 w-9 place-items-center rounded-xl border border-border bg-surface text-muted-foreground hover:text-destructive hover:bg-surface-elevated transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" 
                 aria-label="delete"
               >
-                <Trash2 className="h-4 w-4" />
+                {deletingId === s.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-destructive" />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
               </button>
             </div>
           ))

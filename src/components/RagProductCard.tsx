@@ -1,4 +1,5 @@
-import { Heart, ExternalLink, Star, Sparkles, Layers } from "lucide-react";
+import { useState } from "react";
+import { Heart, ExternalLink, Star, Sparkles, Layers, Loader2 } from "lucide-react";
 import type { RagProduct } from "@/lib/api/types";
 import { useApp } from "@/context/AppContext";
 
@@ -10,21 +11,30 @@ interface RagProductCardProps {
 
 export function RagProductCard({ product, rank, onClick }: RagProductCardProps) {
   const { favorites, toggleFavorite } = useApp();
+  const [isLiking, setIsLiking] = useState(false);
+  
   const isFavorite = favorites.some((f) => f.title === product.title);
   const bestMatch = rank === 0;
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Avoid triggering card details modal onClick
-    toggleFavorite({
-      title: product.title,
-      price: product.price,
-      imageUrl: product.imageUrl,
-      store: product.store,
-      productUrl: product.productUrl,
-      rating: product.rating ?? undefined,
-      category: product.category,
-      summary: product.summary,
-    });
+    if (isLiking) return;
+    
+    setIsLiking(true);
+    try {
+      await toggleFavorite({
+        title: product.title,
+        price: product.price,
+        imageUrl: product.imageUrl,
+        store: product.store,
+        productUrl: product.productUrl,
+        rating: product.rating ?? undefined,
+        category: product.category,
+        summary: product.summary,
+      });
+    } finally {
+      setIsLiking(false);
+    }
   };
 
   const handleLinkClick = (e: React.MouseEvent) => {
@@ -48,10 +58,15 @@ export function RagProductCard({ product, rank, onClick }: RagProductCardProps) 
       
       <button
         onClick={handleFavoriteClick}
+        disabled={isLiking}
         aria-label="favorite"
-        className="absolute top-3 right-3 z-10 grid h-9 w-9 place-items-center rounded-full glass hover:bg-white/10 transition cursor-pointer"
+        className="absolute top-3 right-3 z-10 grid h-9 w-9 place-items-center rounded-full glass hover:bg-white/10 transition cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
       >
-        <Heart className={`h-4 w-4 ${isFavorite ? "fill-ai-purple text-ai-purple" : "text-foreground"}`} />
+        {isLiking ? (
+          <Loader2 className="h-4 w-4 animate-spin text-ai-purple" />
+        ) : (
+          <Heart className={`h-4 w-4 ${isFavorite ? "fill-ai-purple text-ai-purple" : "text-foreground"}`} />
+        )}
       </button>
 
       {/* Product Image */}
