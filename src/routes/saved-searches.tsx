@@ -8,7 +8,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/saved-searches")({
   beforeLoad: () => {
-    if (!localStorage.getItem("accessToken")) {
+    if (typeof window !== 'undefined' && !localStorage.getItem("accessToken")) {
       throw redirect({ to: "/login", replace: true });
     }
   },

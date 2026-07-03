@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/forgot-password")({
   beforeLoad: () => {
-    if (localStorage.getItem("accessToken")) {
+    if (typeof window !== 'undefined' && localStorage.getItem("accessToken")) {
       throw redirect({ to: "/dashboard", replace: true });
     }
   },

@@ -10,7 +10,7 @@ import { useApp } from "@/context/AppContext";
 
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: () => {
-    if (!localStorage.getItem("accessToken")) {
+    if (typeof window !== 'undefined' && !localStorage.getItem("accessToken")) {
       throw redirect({ to: "/login", replace: true });
     }
   },
