@@ -6,10 +6,12 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "rec
 import { useState, useEffect } from "react";
 import { dashboardApi, DashboardOverview } from "@/lib/api/dashboard";
 import { SavedSearch } from "@/lib/api/types";
+import { useApp } from "@/context/AppContext";
 
 export const Route = createFileRoute("/dashboard")({ component: DashboardOverviewPage });
 
 function DashboardOverviewPage() {
+  const { user } = useApp();
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
   const [recentQueries, setRecentQueries] = useState<SavedSearch[]>([]);
   const [chartData, setChartData] = useState<{ name: string; Searches: number }[]>([]);
@@ -59,11 +61,13 @@ function DashboardOverviewPage() {
           <div className="relative z-10 max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-ai-electric animate-pulse" />
-              Embedding engine: all-MiniLM-L6-v2 active
+              AI Semantic Search Active
             </div>
-            <h2 className="mt-4 font-display text-3xl font-bold tracking-tight">Welcome to Semantix Dashboard</h2>
+            <h2 className="mt-4 font-display text-3xl font-bold tracking-tight">
+              Welcome back, {user?.fullName?.split(' ')[0] || user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
+            </h2>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Discover products by meaning and intent. Review your search metrics, quickly relaunch saved semantic queries, or run a new search with our Retrieval-Augmented Generation (RAG) assistant.
+              Discover products across multiple global vendors using intelligent semantic search. Review your search metrics, quickly relaunch your saved queries, or find exactly what you're looking for using intent matching.
             </p>
             <div className="mt-5">
               <Link
