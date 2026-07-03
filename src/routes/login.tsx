@@ -68,7 +68,16 @@ function LoginPage() {
           data: err.response.data
         });
       }
-      const errorMsg = err.response?.data?.message || "Invalid credentials. Please try again.";
+      
+      let errorMsg = "Invalid credentials. Please try again.";
+      if (err.response?.data) {
+        const { message, error } = err.response.data;
+        if (error?.details && Array.isArray(error.details) && error.details.length > 0) {
+          errorMsg = error.details.join('\n');
+        } else if (message) {
+          errorMsg = message;
+        }
+      }
       toast.error(errorMsg);
     } finally {
       setLoading(false);

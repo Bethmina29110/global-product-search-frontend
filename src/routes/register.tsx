@@ -58,7 +58,15 @@ function RegisterPage() {
       toast.success("Account successfully created!");
       navigate({ to: "/dashboard" });
     } catch (err: any) {
-      const errorMsg = err.response?.data?.message || "Registration failed. Please try again.";
+      let errorMsg = "Registration failed. Please try again.";
+      if (err.response?.data) {
+        const { message, error } = err.response.data;
+        if (error?.details && Array.isArray(error.details) && error.details.length > 0) {
+          errorMsg = error.details.join('\n');
+        } else if (message) {
+          errorMsg = message;
+        }
+      }
       toast.error(errorMsg);
     } finally {
       setLoading(false);
