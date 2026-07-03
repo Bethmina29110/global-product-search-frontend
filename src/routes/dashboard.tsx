@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import { LayoutDashboard, Search, Heart, Bookmark, ArrowRight, Sparkles, TrendingUp, Cpu, History, Zap, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
@@ -8,7 +8,14 @@ import { dashboardApi, DashboardOverview } from "@/lib/api/dashboard";
 import { SavedSearch } from "@/lib/api/types";
 import { useApp } from "@/context/AppContext";
 
-export const Route = createFileRoute("/dashboard")({ component: DashboardOverviewPage });
+export const Route = createFileRoute("/dashboard")({
+  beforeLoad: () => {
+    if (!localStorage.getItem("accessToken")) {
+      throw redirect({ to: "/login", replace: true });
+    }
+  },
+  component: DashboardOverviewPage 
+});
 
 function DashboardOverviewPage() {
   const { user } = useApp();

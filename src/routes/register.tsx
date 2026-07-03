@@ -1,11 +1,18 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Brain, Mail, Lock, User as UserIcon, Phone, MapPin, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
 
-export const Route = createFileRoute("/register")({ component: RegisterPage });
+export const Route = createFileRoute("/register")({
+  beforeLoad: () => {
+    if (typeof window !== "undefined" && localStorage.getItem("accessToken")) {
+      throw redirect({ to: "/dashboard", replace: true });
+    }
+  },
+  component: RegisterPage 
+});
 
 function RegisterPage() {
   const [fullName, setFullName] = useState("");

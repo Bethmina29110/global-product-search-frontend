@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as SavedSearchesRouteImport } from './routes/saved-searches'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
@@ -34,6 +35,11 @@ const SearchRoute = SearchRouteImport.update({
 const SavedSearchesRoute = SavedSearchesRouteImport.update({
   id: '/saved-searches',
   path: '/saved-searches',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RegisterRoute = RegisterRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved-searches': typeof SavedSearchesRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved-searches': typeof SavedSearchesRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/saved-searches': typeof SavedSearchesRoute
   '/search': typeof SearchRoute
   '/settings': typeof SettingsRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/saved-searches'
     | '/search'
     | '/settings'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/saved-searches'
     | '/search'
     | '/settings'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/login'
     | '/register'
+    | '/reset-password'
     | '/saved-searches'
     | '/search'
     | '/settings'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SavedSearchesRoute: typeof SavedSearchesRoute
   SearchRoute: typeof SearchRoute
   SettingsRoute: typeof SettingsRoute
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/saved-searches'
       fullPath: '/saved-searches'
       preLoaderRoute: typeof SavedSearchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -263,6 +283,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SavedSearchesRoute: SavedSearchesRoute,
   SearchRoute: SearchRoute,
   SettingsRoute: SettingsRoute,

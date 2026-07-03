@@ -1,17 +1,20 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Brain, Mail, Lock, Key, ArrowRight, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/forgot-password")({ component: ForgotPasswordPage });
+export const Route = createFileRoute("/forgot-password")({
+  beforeLoad: () => {
+    if (localStorage.getItem("accessToken")) {
+      throw redirect({ to: "/dashboard", replace: true });
+    }
+  },
+  component: ForgotPasswordPage 
+});
 
 function ForgotPasswordPage() {
-  const [step, setStep] = useState<"request" | "reset" | "success">("request");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
@@ -31,41 +34,9 @@ function ForgotPasswordPage() {
     try {
       await authApi.forgotPassword(email);
       toast.success("If your email is registered, you will receive an OTP shortly.");
-      setStep("reset");
+      navigate({ to: "/reset-password", search: { email } });
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || "Failed to request password reset. Please try again.";
-      toast.error(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otp || !newPassword || !confirmPassword) {
-      toast.error("Please fill in all fields.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await authApi.resetPassword({ email, otp, newPassword, confirmPassword });
-      toast.success("Password successfully reset!");
-      setStep("success");
-    } catch (err: any) {
-      let errorMsg = "Failed to reset password. Please try again.";
-      if (err.response?.data) {
-        const { message, error } = err.response.data;
-        if (error?.details && Array.isArray(error.details) && error.details.length > 0) {
-          errorMsg = error.details.join('\n');
-        } else if (message) {
-          errorMsg = message;
-        }
-      }
       toast.error(errorMsg);
     } finally {
       setLoading(false);
@@ -100,104 +71,33 @@ function ForgotPasswordPage() {
         <div className="flex items-center justify-center p-6 lg:p-12">
           <div className="w-full max-w-md rounded-3xl border border-border bg-card-gradient p-8 shadow-card-ai">
             
-            {step === "request" && (
-              <>
-                <div className="mb-7 text-center lg:text-left">
-                  <h1 className="font-display text-2xl font-bold">Forgot Password</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">Enter your email to receive a reset code.</p>
-                </div>
-                <form className="space-y-4" onSubmit={handleRequestOtp}>
-                  <Field
-                    icon={Mail}
-                    label="Email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-ai hover:opacity-95 disabled:opacity-50 transition"
-                  >
-                    {loading ? "Sending OTP..." : "Send Reset Code"} <ArrowRight className="h-4 w-4" />
-                  </button>
-                </form>
-              </>
-            )}
+            <div className="mb-7 text-center lg:text-left">
+              <h1 className="font-display text-2xl font-bold">Forgot Password</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Enter your email to receive a reset code.</p>
+            </div>
+            <form className="space-y-4" onSubmit={handleRequestOtp}>
+              <Field
+                icon={Mail}
+                label="Email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                required
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-ai hover:opacity-95 disabled:opacity-50 transition"
+              >
+                {loading ? "Sending OTP..." : "Send Reset Code"} <ArrowRight className="h-4 w-4" />
+              </button>
+            </form>
 
-            {step === "reset" && (
-              <>
-                <div className="mb-7 text-center lg:text-left">
-                  <h1 className="font-display text-2xl font-bold">Set New Password</h1>
-                  <p className="mt-1 text-sm text-muted-foreground">Enter the 4-digit code sent to {email}.</p>
-                </div>
-                <form className="space-y-4" onSubmit={handleResetPassword}>
-                  <Field
-                    icon={Key}
-                    label="4-Digit OTP"
-                    type="text"
-                    placeholder="e.g. 1234"
-                    maxLength={4}
-                    value={otp}
-                    onChange={(e) => setOtp(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                  <Field
-                    icon={Lock}
-                    label="New Password"
-                    type="password"
-                    placeholder="At least 8 characters"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                  <Field
-                    icon={Lock}
-                    label="Confirm New Password"
-                    type="password"
-                    placeholder="Repeat password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={loading}
-                    required
-                  />
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-ai hover:opacity-95 disabled:opacity-50 transition"
-                  >
-                    {loading ? "Resetting Password..." : "Reset Password"} <ArrowRight className="h-4 w-4" />
-                  </button>
-                </form>
-              </>
-            )}
-
-            {step === "success" && (
-              <div className="text-center py-6">
-                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-green-500/10 text-green-500 mb-6">
-                  <CheckCircle2 className="h-8 w-8" />
-                </div>
-                <h1 className="font-display text-2xl font-bold mb-2">Password Reset!</h1>
-                <p className="text-sm text-muted-foreground mb-8">Your password has been successfully updated. You can now sign in with your new credentials.</p>
-                <Link
-                  to="/login"
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-ai hover:opacity-95 transition"
-                >
-                  Return to Sign In <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            )}
-
-            {step !== "success" && (
-              <p className="mt-6 text-center text-xs text-muted-foreground">
-                Remember your password? <Link to="/login" className="text-ai-electric hover:underline">Back to login</Link>
-              </p>
-            )}
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Remember your password? <Link to="/login" className="text-ai-electric hover:underline">Back to login</Link>
+            </p>
           </div>
         </div>
       </div>

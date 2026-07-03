@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
   Brain, Sparkles, Layers, Gauge, Globe2, Zap, Search, Cpu, Database, Cloud,
@@ -9,7 +9,14 @@ import { SearchBar } from "@/components/SearchBar";
 import { products } from "@/lib/mockData";
 import { SemanticScoreBadge } from "@/components/SemanticScoreBadge";
 
-export const Route = createFileRoute("/")({ component: Landing });
+export const Route = createFileRoute("/")({
+  beforeLoad: () => {
+    throw redirect({
+      to: "/login",
+    });
+  },
+  component: Landing,
+});
 
 const features = [
   { icon: Brain, title: "Semantic Search", desc: "Understands meaning and intent, not just keywords." },

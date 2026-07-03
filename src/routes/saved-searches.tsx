@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { Bookmark, RefreshCw, Trash2, Sparkles, Clock, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { savedSearchesApi } from "@/lib/api/saved-searches";
@@ -6,7 +6,14 @@ import { SavedSearch } from "@/lib/api/types";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/saved-searches")({ component: SavedSearchesPage });
+export const Route = createFileRoute("/saved-searches")({
+  beforeLoad: () => {
+    if (!localStorage.getItem("accessToken")) {
+      throw redirect({ to: "/login", replace: true });
+    }
+  },
+  component: SavedSearchesPage 
+});
 
 function SavedSearchesPage() {
   const [searches, setSearches] = useState<SavedSearch[]>([]);

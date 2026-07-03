@@ -30,7 +30,7 @@ export const Route = createFileRoute("/product/$id")({
 function ProductDetail() {
   const { product } = Route.useLoaderData();
   const { favorites, toggleFavorite } = useApp();
-  const fav = favorites.includes(product.id);
+  const fav = favorites.some((f) => f.title === product.name);
   const similar = products.filter((p) => p.id !== product.id && p.category === product.category).slice(0, 3);
 
   const insights = [
@@ -89,7 +89,16 @@ function ProductDetail() {
 
           <div className="flex gap-2">
             <button className="flex-1 inline-flex items-center justify-center rounded-xl bg-ai-gradient px-4 py-2.5 text-sm font-semibold text-white shadow-ai">View at {product.source}</button>
-            <button onClick={() => toggleFavorite(product.id)} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface">
+            <button onClick={() => toggleFavorite({
+              title: product.name,
+              price: String(product.price),
+              imageUrl: product.image,
+              store: product.source,
+              productUrl: product.url || "#",
+              rating: product.rating,
+              category: product.category,
+              summary: product.description
+            })} className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface">
               <Heart className={`h-4 w-4 ${fav ? "fill-ai-purple text-ai-purple" : ""}`} />
             </button>
             <button className="grid h-10 w-10 place-items-center rounded-xl border border-border bg-surface"><Share2 className="h-4 w-4" /></button>

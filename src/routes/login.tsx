@@ -1,11 +1,18 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, redirect } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import { Brain, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { authApi } from "@/lib/api/auth";
 import { toast } from "sonner";
 import { useApp } from "@/context/AppContext";
 
-export const Route = createFileRoute("/login")({ component: LoginPage });
+export const Route = createFileRoute("/login")({
+  beforeLoad: () => {
+    if (localStorage.getItem("accessToken")) {
+      throw redirect({ to: "/dashboard", replace: true });
+    }
+  },
+  component: LoginPage 
+});
 
 function LoginPage() {
   const [email, setEmail] = useState("");
