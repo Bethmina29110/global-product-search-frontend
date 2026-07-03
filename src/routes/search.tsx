@@ -14,11 +14,20 @@ import { RagSearchData, RagProduct, SearchProduct } from "@/lib/api/types";
 import { toast } from "sonner";
 import axios from "axios";
 
-export const Route = createFileRoute("/search")({ component: SearchPage });
+export const Route = createFileRoute("/search")({
+  validateSearch: (search: Record<string, unknown>) => {
+    return {
+      q: search.q as string | undefined,
+      mode: search.mode as "normal" | "rag" | undefined,
+    };
+  },
+  component: SearchPage,
+});
 
 function SearchPage() {
-  const [q, setQ] = useState("");
-  const [searchMode, setSearchMode] = useState<"normal" | "rag">("rag");
+  const searchParams = Route.useSearch();
+  const [q, setQ] = useState(searchParams.q || "");
+  const [searchMode, setSearchMode] = useState<"normal" | "rag">(searchParams.mode || "rag");
   const [loading, setLoading] = useState(false);
   const [ragData, setRagData] = useState<RagSearchData | null>(null);
   const [normalResults, setNormalResults] = useState<SearchProduct[]>([]);
@@ -37,10 +46,18 @@ function SearchPage() {
   // Exit warning tracking references
   const loadingRef = useRef(loading);
   const hasDataRef = useRef(false);
+  const hasRunInitialRef = useRef(false);
 
   useEffect(() => {
     loadingRef.current = loading;
   }, [loading]);
+
+  useEffect(() => {
+    if (searchParams.q && !hasRunInitialRef.current) {
+      hasRunInitialRef.current = true;
+      onSubmit(searchParams.q, searchParams.mode || "rag");
+    }
+  }, [searchParams.q, searchParams.mode]);
 
   useEffect(() => {
     hasDataRef.current = !!(ragData || normalResults.length > 0);
@@ -85,8 +102,10 @@ function SearchPage() {
     toast.success("Loaded more results!");
   };
 
-  const onSubmit = async (queryText?: string) => {
+  const onSubmit = async (queryText?: string, overrideMode?: "normal" | "rag") => {
     const searchQuery = queryText !== undefined ? queryText : q;
+    const currentMode = overrideMode || searchMode;
+    
     if (!searchQuery.trim()) {
       toast.error("Please enter a search query.");
       return;
@@ -104,7 +123,7 @@ function SearchPage() {
     setError(null);
     setVisibleCount(20);
     
-    if (searchMode === "rag") {
+    if (currentMode === "rag") {
       try {
         const response = await ragApi.search(searchQuery, controller.signal);
         if (response && response.success) {

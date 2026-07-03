@@ -74,6 +74,7 @@ function SavedSearchesPage() {
               </div>
               <Link 
                 to="/search" 
+                search={{ q: s.query, mode: s.type as "normal" | "rag" }}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-ai-gradient px-3 py-2 text-xs font-semibold text-white shadow-ai hover:opacity-95 transition cursor-pointer"
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Rerun
