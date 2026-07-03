@@ -61,11 +61,62 @@ function AnalyticsPage() {
     { label: "Avg Latency", value: `${overview?.averageLatency || 0}ms`, change: "", icon: Zap, color: "text-emerald-400" },
   ];
 
+  const handleDownloadReport = () => {
+    const csvRows = [];
+    csvRows.push("--- AI Search Analytics Report ---");
+    csvRows.push("");
+    
+    csvRows.push("Overview");
+    csvRows.push(`Total Searches,${overview?.totalSearches || 0}`);
+    csvRows.push(`Saved Searches,${overview?.savedSearches || 0}`);
+    csvRows.push(`Favorite Products,${overview?.favoriteProducts || 0}`);
+    csvRows.push(`Average Latency,${overview?.averageLatency || 0}ms`);
+    csvRows.push("");
+
+    csvRows.push("Search Trend");
+    csvRows.push("Day,Searches");
+    trendData.forEach(t => csvRows.push(`${t.day},${t.searches}`));
+    csvRows.push("");
+
+    csvRows.push("Top Categories");
+    csvRows.push("Category,Count");
+    topCategories.forEach(c => csvRows.push(`"${c.name}",${c.value}`));
+    csvRows.push("");
+
+    csvRows.push("Top Stores");
+    csvRows.push("Store,Count");
+    topStores.forEach(s => csvRows.push(`"${s.name}",${s.value}`));
+    csvRows.push("");
+
+    csvRows.push("Price Distribution");
+    csvRows.push("Range,Count");
+    priceDistribution.forEach(p => csvRows.push(`"${p.range}",${p.count}`));
+    
+    const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `analytics_report_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <DashboardLayout title="Analytics">
-      <div className="mb-6">
-        <h2 className="font-display text-2xl font-bold">AI Search Analytics</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Embedding performance, query trends, and semantic score distribution.</p>
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="font-display text-2xl font-bold">AI Search Analytics</h2>
+          <p className="mt-1 text-sm text-muted-foreground">Embedding performance, query trends, and semantic score distribution.</p>
+        </div>
+        <button 
+          onClick={handleDownloadReport}
+          className="inline-flex items-center gap-2 rounded-xl bg-ai-gradient px-4 py-2 text-sm font-semibold text-white shadow-ai hover:opacity-95 transition cursor-pointer"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Download Report
+        </button>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
