@@ -28,4 +28,29 @@ export const authApi = {
     const response = await apiClient.get<ApiResponse<User>>(ENDPOINTS.AUTH.ME);
     return response.data;
   },
+
+  updateProfile: async (data: { name?: string; email?: string }): Promise<ApiResponse<User>> => {
+    const response = await apiClient.patch<ApiResponse<User>>(ENDPOINTS.AUTH.ME, data);
+    return response.data;
+  },
+
+  changePassword: async (data: { currentPassword?: string; newPassword?: string }): Promise<void> => {
+    await apiClient.post(`${ENDPOINTS.AUTH.ME}/change-password`, data);
+  },
+
+  deleteAccount: async (): Promise<void> => {
+    await apiClient.delete(ENDPOINTS.AUTH.ME);
+  },
+
+  clearSearchHistory: async (): Promise<void> => {
+    await apiClient.delete(`${ENDPOINTS.AUTH.ME}/search-history`);
+  },
+
+  clearFavourites: async (): Promise<void> => {
+    await apiClient.delete(`${ENDPOINTS.AUTH.ME}/favourites`);
+  },
+
+  clearSavedSearches: async (): Promise<void> => {
+    await apiClient.delete(`${ENDPOINTS.AUTH.ME}/saved-searches`);
+  },
 };
