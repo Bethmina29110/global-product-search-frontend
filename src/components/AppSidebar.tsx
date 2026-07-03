@@ -1,5 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Search, Heart, Bookmark, BarChart3, Settings, Brain, LogOut } from "lucide-react";
+import { LayoutDashboard, Search, Heart, Bookmark, BarChart3, Settings, Brain, LogOut, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 
 import { useApp } from "@/context/AppContext";
 
@@ -16,10 +18,20 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const { logout } = useApp();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
-    navigate({ to: "/login" });
+    try {
+      setIsLoggingOut(true);
+      await logout();
+      toast.success("Goodbye! See you next time.");
+      navigate({ to: "/login" });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to log out");
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -62,10 +74,11 @@ export function AppSidebar() {
       <div className="px-3 pb-4 mt-auto">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition cursor-pointer"
+          disabled={isLoggingOut}
+          className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <LogOut className="h-4 w-4" />
-          Logout
+          {isLoggingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+          {isLoggingOut ? "Logging out..." : "Logout"}
         </button>
       </div>
     </aside>
