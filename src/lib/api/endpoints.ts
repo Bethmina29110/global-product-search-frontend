@@ -25,4 +25,11 @@ export const ENDPOINTS = {
     RECENT_QUERIES: "/dashboard/recent-saved-queries",
     SEMANTIC_ACTIVITY: "/dashboard/semantic-search-activity",
   },
+  ANALYTICS: {
+    OVERVIEW: "/analytics/overview",
+    SEARCH_TREND: "/analytics/search-trend",
+    TOP_CATEGORIES: "/analytics/top-categories",
+    TOP_STORES: "/analytics/top-stores",
+    PRICE_DISTRIBUTION: "/analytics/price-distribution",
+  },
 };
