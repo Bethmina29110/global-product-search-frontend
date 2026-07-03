@@ -14,8 +14,13 @@ import { RagSearchData, RagProduct, SearchProduct } from "@/lib/api/types";
 import { toast } from "sonner";
 import axios from "axios";
 
+export type SearchParams = {
+  q?: string;
+  mode?: "normal" | "rag";
+};
+
 export const Route = createFileRoute("/search")({
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): SearchParams => {
     return {
       q: search.q as string | undefined,
       mode: search.mode as "normal" | "rag" | undefined,

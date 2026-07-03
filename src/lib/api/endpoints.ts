@@ -20,4 +20,9 @@ export const ENDPOINTS = {
     BASE: "/saved-search",
     BY_ID: (id: number) => `/saved-search/${id}`,
   },
+  DASHBOARD: {
+    OVERVIEW: "/dashboard/overview",
+    RECENT_QUERIES: "/dashboard/recent-saved-queries",
+    SEMANTIC_ACTIVITY: "/dashboard/semantic-search-activity",
+  },
 };

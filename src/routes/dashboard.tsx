@@ -1,23 +1,53 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { motion } from "framer-motion";
-import { LayoutDashboard, Search, Heart, Bookmark, ArrowRight, Sparkles, TrendingUp, Cpu, History, Zap } from "lucide-react";
+import { LayoutDashboard, Search, Heart, Bookmark, ArrowRight, Sparkles, TrendingUp, Cpu, History, Zap, Loader2 } from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
-import { savedSearches } from "@/lib/mockData";
+import { useState, useEffect } from "react";
+import { dashboardApi, DashboardOverview } from "@/lib/api/dashboard";
+import { SavedSearch } from "@/lib/api/types";
 
 export const Route = createFileRoute("/dashboard")({ component: DashboardOverviewPage });
 
-const MOCK_CHART_DATA = [
-  { name: "Mon", Searches: 12, Accuracy: 84 },
-  { name: "Tue", Searches: 19, Accuracy: 88 },
-  { name: "Wed", Searches: 15, Accuracy: 85 },
-  { name: "Thu", Searches: 27, Accuracy: 91 },
-  { name: "Fri", Searches: 32, Accuracy: 93 },
-  { name: "Sat", Searches: 20, Accuracy: 89 },
-  { name: "Sun", Searches: 24, Accuracy: 92 },
-];
-
 function DashboardOverviewPage() {
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [recentQueries, setRecentQueries] = useState<SavedSearch[]>([]);
+  const [chartData, setChartData] = useState<{ name: string; Searches: number }[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const [overviewRes, queriesRes, activityRes] = await Promise.all([
+          dashboardApi.getOverview(),
+          dashboardApi.getRecentSavedQueries(),
+          dashboardApi.getSemanticSearchActivity()
+        ]);
+        setOverview(overviewRes);
+        setRecentQueries(queriesRes);
+
+        const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+        setChartData(activityRes.map((val, idx) => ({ name: days[idx], Searches: val })));
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout title="Analytics & Overview">
+        <div className="flex items-center justify-center h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-ai-purple" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout title="Analytics & Overview">
       <div className="space-y-6">
@@ -38,6 +68,7 @@ function DashboardOverviewPage() {
             <div className="mt-5">
               <Link
                 to="/search"
+                search={{ q: "", mode: "rag" }}
                 className="inline-flex items-center gap-1.5 rounded-xl bg-ai-gradient px-4 py-2 text-sm font-semibold text-white shadow-ai hover:opacity-95 transition"
               >
                 Start New AI Search <Search className="h-4 w-4" />
@@ -48,10 +79,10 @@ function DashboardOverviewPage() {
 
         {/* Stats Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Total Searches Run" value="148" description="+12% since yesterday" icon={Search} color="text-ai-purple" />
-          <StatCard title="Saved Intent Queries" value={savedSearches.length.toString()} description="Quick-launch queries" icon={Bookmark} color="text-ai-indigo" />
-          <StatCard title="Favorite Products" value="8" description="Shortlisted across vendors" icon={Heart} color="text-ai-electric" />
-          <StatCard title="Average Latency" value="184ms" description="Vector similarity resolving" icon={Zap} color="text-emerald-400" />
+          <StatCard title="Total Searches Run" value={overview?.totalSearches.toString() || "0"} description="" icon={Search} color="text-ai-purple" />
+          <StatCard title="Saved Intent Queries" value={overview?.savedIntentQueries.toString() || "0"} description="Quick-launch queries" icon={Bookmark} color="text-ai-indigo" />
+          <StatCard title="Favorite Products" value={overview?.favoriteProducts.toString() || "0"} description="Shortlisted across vendors" icon={Heart} color="text-ai-electric" />
+          <StatCard title="Average Latency" value={`${overview?.averageLatency || 0}ms`} description="Vector similarity resolving" icon={Zap} color="text-emerald-400" />
         </div>
 
         {/* Analytics & Activity Row */}
@@ -69,7 +100,7 @@ function DashboardOverviewPage() {
             </div>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={MOCK_CHART_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorSearches" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--ai-purple)" stopOpacity={0.3}/>
@@ -95,13 +126,13 @@ function DashboardOverviewPage() {
             </div>
 
             <div className="space-y-2">
-              {savedSearches.slice(0, 4).map((s) => (
+              {recentQueries.slice(0, 4).map((s) => (
                 <div key={s.id} className="flex items-center justify-between p-2.5 rounded-xl border border-border bg-surface hover:bg-surface-elevated transition">
                   <div className="min-w-0 flex-1 pr-2">
                     <div className="text-xs font-semibold truncate text-foreground/90">{s.query}</div>
-                    <div className="text-[10px] text-muted-foreground">{s.date}</div>
+                    <div className="text-[10px] text-muted-foreground">{new Date(s.createdAt).toLocaleDateString()}</div>
                   </div>
-                  <Link to="/search" className="shrink-0 text-muted-foreground hover:text-ai-purple">
+                  <Link to="/search" search={{ q: s.query, mode: s.type === "rag" ? "rag" : "normal" }} className="shrink-0 text-muted-foreground hover:text-ai-purple">
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
