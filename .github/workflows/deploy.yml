@@ -1,4 +1,4 @@
-name: Deploy to AWS S3
+name: Deploy to EC2
 
 on:
   push:
@@ -16,27 +16,48 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20' # You can adjust this based on your node version
+          node-version: '20'
 
       - name: Install Dependencies
-        run: npm ci # Uses package-lock.json for reliable installs. (Use `bun install` if you prefer Bun)
+        run: npm ci
 
       - name: Build the Project
         run: npm run build
         env:
           API_URL: ${{ secrets.API_URL }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Create Deployment Package
+        run: |
+          mkdir deploy_package
+          cp -r dist deploy_package/
+          cp package.json deploy_package/
+          cp package-lock.json deploy_package/
+          tar -czf deploy.tar.gz -C deploy_package .
+
+      - name: Copy files to EC2
+        uses: appleboy/scp-action@v0.1.7
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1 # Mumbai region
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "deploy.tar.gz"
+          target: "/home/ubuntu/global-product-search-frontend"
 
-      - name: Deploy to S3 Bucket
-        # TanStack Start outputs client files to dist/client
-        run: aws s3 sync ./dist/client s3://global-product-search.bethmina.site --delete
-
-      # Optional: Invalidate CloudFront cache so changes reflect immediately
-      # - name: Invalidate CloudFront
-      #   run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+      - name: Extract and Restart PM2 on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ubuntu/global-product-search-frontend
+            # Extract the new build
+            tar -xzf deploy.tar.gz
+            rm deploy.tar.gz
+            
+            # Install production dependencies
+            npm ci --production
+            
+            # Restart the app using PM2 (Assumes process is named 'frontend')
+            # If PM2 is not managing it yet, it will fail here. Please start it manually once!
+            pm2 restart frontend || pm2 start npm --name "frontend" -- start
