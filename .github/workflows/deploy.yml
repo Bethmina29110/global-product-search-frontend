@@ -32,6 +32,7 @@ jobs:
           cp -r dist deploy_package/
           cp package.json deploy_package/
           cp package-lock.json deploy_package/
+          echo "API_URL=${{ secrets.API_URL }}" > deploy_package/.env
           tar -czf deploy.tar.gz -C deploy_package .
 
       - name: Copy files to EC2
