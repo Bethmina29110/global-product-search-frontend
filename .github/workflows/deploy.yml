@@ -59,6 +59,6 @@ jobs:
             # Install production dependencies
             npm ci --production
             
-            # Restart the app using PM2 (Assumes process is named 'frontend')
-            # If PM2 is not managing it yet, it will fail here. Please start it manually once!
-            pm2 restart frontend || pm2 start npm --name "frontend" -- start
+            # Restart the app using PM2 on PORT 3001 to avoid conflicting with the backend on 3000
+            # If PM2 is not managing it yet, it will fail the restart, so we fallback to start.
+            pm2 restart frontend || PORT=3001 pm2 start dist/server/server.js --name "frontend"
