@@ -24,7 +24,7 @@ jobs:
       - name: Build the Project
         run: npm run build
         env:
-          API_URL: ${{ secrets.API_URL }}
+          VITE_API_URL: ${{ secrets.API_URL }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
