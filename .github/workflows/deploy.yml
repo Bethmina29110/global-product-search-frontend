@@ -34,8 +34,8 @@ jobs:
           aws-region: ap-south-1 # Mumbai region
 
       - name: Deploy to S3 Bucket
-        # Note: If TanStack Start outputs to a different folder like `dist/client` or `.output/public`, update `./dist` below.
-        run: aws s3 sync ./dist s3://global-product-search.bethmina.site --delete
+        # TanStack Start outputs client files to dist/client
+        run: aws s3 sync ./dist/client s3://global-product-search.bethmina.site --delete
 
       # Optional: Invalidate CloudFront cache so changes reflect immediately
       # - name: Invalidate CloudFront
