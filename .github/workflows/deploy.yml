@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy to S3
 
 on:
   push:
@@ -26,42 +26,17 @@ jobs:
         env:
           API_URL: ${{ secrets.API_URL }}
 
-      - name: Create Deployment Package
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy to S3
         run: |
-          mkdir deploy_package
-          cp -r dist deploy_package/
-          cp package.json deploy_package/
-          cp package-lock.json deploy_package/
-          echo "API_URL=${{ secrets.API_URL }}" > deploy_package/.env
-          tar -czf deploy.tar.gz -C deploy_package .
+          aws s3 sync dist s3://${{ secrets.S3_BUCKET_NAME }} --delete
 
-      - name: Copy files to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "deploy.tar.gz"
-          target: "/home/ubuntu/global-product-search-frontend"
-
-      - name: Extract and Restart PM2 on EC2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            cd /home/ubuntu/global-product-search-frontend
-            # Extract the new build
-            tar -xzf deploy.tar.gz
-            rm deploy.tar.gz
-            
-            # Install production dependencies
-            npm ci --production
-            npm install @hono/node-server
-            
-            # Delete the old npm-based process so we can recreate it cleanly
-            pm2 delete frontend || true
-            
-            # Start the Node server directly with PM2 to capture real error logs
-            PORT=3001 pm2 start dist/server/server.js --name "frontend"
+      # If you use CloudFront for SSL/HTTPS, uncomment this to automatically clear the cache on deploy:
+      # - name: Invalidate CloudFront Cache
+      #   run: aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} --paths "/*"
