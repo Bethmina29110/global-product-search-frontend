@@ -58,6 +58,7 @@ jobs:
             
             # Install production dependencies
             npm ci --production
+            npm install @hono/node-server
             
             # Delete the old npm-based process so we can recreate it cleanly
             pm2 delete frontend || true
