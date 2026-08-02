@@ -66,7 +66,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   return brandedErrorResponse();
 }
 
-export default {
+const fetchHandler = {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
@@ -78,3 +78,18 @@ export default {
     }
   },
 };
+
+// If we are running in Node.js (PM2/EC2), start the server
+if (typeof process !== 'undefined' && process.env.PORT) {
+  import('@hono/node-server').then(({ serve }) => {
+    serve({
+      fetch: fetchHandler.fetch,
+      port: parseInt(process.env.PORT || '3001', 10)
+    }, (info) => {
+      console.log(`Listening on http://localhost:${info.port}`);
+    });
+  });
+}
+
+// Still export it for Cloudflare/Vinxi just in case!
+export default fetchHandler;
