@@ -74,7 +74,6 @@ export function SearchBar({ value, onChange, onSubmit, onCancel, size = "md", lo
         inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
       }
       onChange(transcript);
-      onSubmit?.(transcript); // Automatically submit the search
     };
 
     recognition.onerror = (event: any) => {
